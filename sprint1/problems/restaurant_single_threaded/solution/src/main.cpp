@@ -96,7 +96,6 @@ public:
         , with_onion_{with_onion}
         , handler_{std::move(handler)} {
     }
-
     // Запускает асинхронное выполнение заказа
     void Execute() {
         logger_.LogMessage("Order has been started."sv);
@@ -114,7 +113,13 @@ private:
     }
     
     void OnRoasted(sys::error_code ec) {
-        logger_.LogMessage("On Roasted"sv);
+        if (ec) {
+            logger_.LogMessage("Roast Error"s + ec.what());
+        } else {
+            logger_.LogMessage("Cutlet has been roasted"sv);
+            hamburger_.SetCutletRoasted();
+        }
+        CheckReadiness(ec);
     }
     
     void MarinadeOnion() {
@@ -125,13 +130,75 @@ private:
     }
 
     void OnOnionMarinaded(sys::error_code ec) {
-        logger_.LogMessage("Onion has been marinaded"sv);
+        if (ec) {
+            logger_.LogMessage("Error marinading onion"s + ec.what());
+        } else {
+            logger_.LogMessage("Onion has been marinaded"sv);
+            onion_marinaded_ = true;
+        }
+        CheckReadiness(ec);
+    }
+
+    void CheckReadiness(sys::error_code ec) {
+        if (delivered_) {
+            // Выходим, если заказ уже доставлен либо клиента уведомили об ошибке
+            return;
+        }
+        if (ec) {
+            // В случае ошибки уведомляем клиента о невозможности выполнить заказ
+            return Deliver(ec);
+        }
+
+        // Самое время добавить лук
+        if (CanAddOnion()) {
+            logger_.LogMessage("Add onion"sv);
+            hamburger_.AddOnion();
+        }
+
+        // Если все компоненты гамбургера готовы, упаковываем его
+        if (IsReadyToPack()) {
+            Pack();
+        }
+    }
+
+    void Deliver(sys::error_code ec) {
+        // Защита заказа от повторной доставки
+        delivered_ = true;
+        // Доставляем гамбургер в случае успеха либо nullptr, если возникла ошибка
+        handler_(ec, id_, ec ? nullptr : &hamburger_);
+    }
+
+    [[nodiscard]] bool CanAddOnion() const {
+        // Лук можно добавить, если котлета обжарена, лук замаринован, но пока не добавлен
+        return hamburger_.IsCutletRoasted() && onion_marinaded_ && !hamburger_.HasOnion();
+    }
+
+    [[nodiscard]] bool IsReadyToPack() const {
+        // Если котлета обжарена и лук добавлен, как просили, гамбургер можно упаковывать
+        return hamburger_.IsCutletRoasted() && (!with_onion_ || hamburger_.HasOnion());
+    }
+
+    void Pack() {
+        logger_.LogMessage("Packing"sv);
+
+        // Просто потребляем ресурсы процессора в течение 0,5 с.
+        auto start = steady_clock::now();
+        while (steady_clock::now() - start < 500ms) {
+        }
+
+        hamburger_.Pack();
+        logger_.LogMessage("Packed"sv);
+
+        Deliver({});
     }
 
     net::io_context& io_;
     int id_;
     bool with_onion_;
     OrderHandler handler_;
+    Hamburger hamburger_;
+    bool onion_marinaded_ = false;
+    bool delivered_ = false;
     Logger logger_{std::to_string(id_)};
     Timer roast_timer_{io_, 1s};
     Timer marinade_timer_{io_, 2s};
@@ -167,7 +234,7 @@ int main() {
     };
 
     std::unordered_map<int, OrderResult> orders;
-    auto handle_result = [&orders](sys::error_code ec, int id, Hamburger* h) {
+    auto handle_result = [&orders, &logger](sys::error_code ec, int id, Hamburger* h) {
         orders.emplace(id, OrderResult{ec, ec ? Hamburger{} : *h});
     };
 
