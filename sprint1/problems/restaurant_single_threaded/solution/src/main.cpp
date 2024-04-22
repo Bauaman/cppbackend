@@ -86,6 +86,8 @@ private:
     steady_clock::time_point start_time_{steady_clock::now()};
 };
 
+using OrderHandler = std::function<void(sys::error_code ec, int id, Hamburger* hamburger)>;
+
 class Order : public std::enable_shared_from_this<Order> {
 public:
     Order(net::io_context& io, int id, bool with_onion, OrderHandler handler)
@@ -134,9 +136,6 @@ private:
     Timer roast_timer_{io_, 1s};
     Timer marinade_timer_{io_, 2s};
 }; 
-
-// Функция, которая будет вызвана по окончании обработки заказа
-using OrderHandler = std::function<void(sys::error_code ec, int id, Hamburger* hamburger)>;
 
 class Restaurant {
 public:
