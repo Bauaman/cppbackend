@@ -9,7 +9,7 @@ std::filesystem::path operator""_p(const char* data, std::size_t sz) {
 
 std::string LoadJsonFileAsString(const std::filesystem::path& json_path) {
     std::ifstream jsonfile;
-    std::filesystem::path filepath = "../../data"_p / json_path;
+    std::filesystem::path filepath = /*"../../data"_p / */json_path;
     std::cout << filepath << std::endl;
     jsonfile.open(filepath);
     
