@@ -60,10 +60,10 @@ namespace http_handler {
                 mapJson["offices"] = offices;
                 response_text.push_back(mapJson);
             } else {
-                boost::json::object mapJson;
-                mapJson["code"] = "mapNotFound";
-                mapJson["message"] = "Map not found";
-                response_text.push_back(mapJson);
+                    response_text = {
+                    {"code", "mapNotFound"},
+                    {"message", "Map Not Found"}
+                };
             }
         }
         return response_text;
