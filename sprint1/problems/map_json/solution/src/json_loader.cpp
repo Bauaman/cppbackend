@@ -9,25 +9,20 @@ std::filesystem::path operator""_p(const char* data, std::size_t sz) {
 
 std::string LoadJsonFileAsString(const std::filesystem::path& json_path) {
     std::ifstream jsonfile;
-    std::filesystem::path filepath = /*"../../data"_p / */json_path;
-    std::cout << filepath << std::endl;
+    std::filesystem::path filepath = /*"../../data"_p /*/ json_path;
     jsonfile.open(filepath);
     
     if (!jsonfile.is_open()) {
         std::cerr << "Failed to open file: " << json_path << std::endl;
         return "";
-    } else {
-        std::cout << "File: " << json_path << " opened OK" << std::endl;
     }
 
     std::stringstream buffer;
     buffer << jsonfile.rdbuf();
-    std::cout << buffer.str() << std::endl;
     return buffer.str();
 }
 
 void AddRoadsToMap(const boost::json::value& parsed, model::Map& map) {
-    std::cout << "Add roads..." << std::endl;
     for (auto& road : parsed.as_array()) {
         if (road.as_object().contains("x1")) {
             model::Road road_{model::Road::VERTICAL, 
@@ -42,25 +37,20 @@ void AddRoadsToMap(const boost::json::value& parsed, model::Map& map) {
             map.AddRoad(road_);
         }
     }
-    std::cout << "Roads added" << std::endl;
 }
 
 void AddBuildingsToMap(const boost::json::value& parsed, model::Map& map) {
-    std::cout << "Add buildings..." << std::endl;
     for (auto& building : parsed.as_array()) {
         model::Rectangle rect{{static_cast<int>(building.as_object().at("x").as_int64()), static_cast<int>(building.as_object().at("y").as_int64())},
                               {static_cast<int>(building.as_object().at("w").as_int64()), static_cast<int>(building.as_object().at("h").as_int64())}};
         model::Building building_{rect};
         map.AddBuilding(building_);
     }
-    std::cout << "Buildings added" << std::endl;
 }
 
 void AddOfficesToMap(const boost::json::value& parsed, model::Map& map) {
-    std::cout << "Add offices..." << std::endl;
     for (auto& office : parsed.as_array()) {
         model::Office::Id id{office.as_object().at("id").as_string().c_str()};
-        std::cout << "Id ok" << std::endl;
         model::Office office_{id, 
                               {static_cast<int>(office.as_object().at("x").as_int64()), static_cast<int>(office.as_object().at("y").as_int64())}, 
                               {static_cast<int>(office.as_object().at("offsetX").as_int64()), static_cast<int>(office.as_object().at("offsetY").as_int64())}};
@@ -70,13 +60,11 @@ void AddOfficesToMap(const boost::json::value& parsed, model::Map& map) {
             std::cerr << ex.what() << std::endl;
         }
     }
-    std::cout << "Offices added" << std::endl;
 }
 
 void AddMapsToGame (const boost::json::value& parsed, model::Game& game) {
     for (auto& map : parsed.as_array()) {
         model::Map::Id id{map.as_object().at("id").as_string().c_str()};
-        std::cout << "map id: " << *id << std::endl;
         model::Map map_i = model::Map{id, map.as_object().at("name").as_string().c_str()};
         AddRoadsToMap(map.as_object().at("roads").as_array(), map_i);
         AddBuildingsToMap(map.as_object().at("buildings").as_array(), map_i);
@@ -92,15 +80,7 @@ model::Game LoadGame(const std::filesystem::path& json_path) {
     std::string json_as_string = LoadJsonFileAsString(json_path);
     boost::json::value parsed_json = boost::json::parse(json_as_string);
 
-    std::cout << "parsed json is_array: " << parsed_json.is_array() << std::endl;
-    std::cout << "parsed json is_object: " << parsed_json.is_object() << std::endl;
-
     model::Game game;
-
-    boost::json::value json_map_parsed = parsed_json.as_object().at("maps");
-    
-    std::cout << "json_map_parsed is_array: " << json_map_parsed.is_array() << std::endl;
-    std::cout << "json_map_parsed is_object: " << json_map_parsed.is_object() << std::endl;
 
     AddMapsToGame(parsed_json.as_object().at("maps").as_array(), game);
 

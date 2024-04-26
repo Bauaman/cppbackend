@@ -1,7 +1,7 @@
 #pragma once
 
 #define BOOST_BEAST_USE_STD_STRING_VIEW
-
+#include <iostream>
 #include "http_server.h"
 #include "model.h"
 
@@ -31,21 +31,27 @@ public:
     template <typename Body, typename Allocator>
     std::string RequestParser(const http::request<Body, http::basic_fields<Allocator>>& req) {
         std::string target = std::string(req.target());
+        std::cout << "Target: " << target << std::endl;
         size_t pos = target.find("/api/v1/") + 7;
-
-        if (pos != std::string::npos) {
-            std::string req_ = target.substr(pos);
+        std::cout << pos << std::endl;
+        if (pos != 6) { //проверка на правильный префикс
+            std::string req_ = target.substr(pos+1);
             size_t next_slash_pos = req_.find('/');
-            if (next_slash_pos != std::string::npos) {
-                req_.substr(0, next_slash_pos);
+
+            if (next_slash_pos != req_.length() && next_slash_pos != std::string::npos) {
+                std::cout << "Next slash pos: " << next_slash_pos << std::endl;
+                req_ = req_.substr(next_slash_pos+1);
+                std::cout << "Req_ 2 " << req_ << std::endl;
                 if (req_.find('/') == std::string::npos) {
-                    return req_;
+                    std::cout << "Here 2" << " " << req_ << std::endl;
+                    return std::string(req_);
                 } else {
                     throw std::logic_error("Invalid request (/api/v1/maps/id/?)"s);
                 }
             } else {
                 if (req_ == "maps") {
-                    return req_;
+                    std::cout << "Return here" << std::endl;
+                    return std::string(req_);
                 } else {
                     throw std::logic_error("Invalid request (/api/v1/?)"s);
                 }
@@ -66,7 +72,7 @@ public:
             try {
                 std::string req_ = RequestParser(req);
                 boost::json::value response_body = PrepareResponce(req_, game_);
-                if (response_body.as_array().at(0).as_string() == "mapNotFound") {
+                if (response_body.as_array().at(0).as_object().find("code") != response_body.as_array().at(0).as_object().end()) {
                     status = http::status::not_found;
                 } else {
                     status = http::status::ok;

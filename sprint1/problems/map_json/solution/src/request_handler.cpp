@@ -3,6 +3,7 @@
 namespace http_handler {
 
     boost::json::value RequestHandler::PrepareResponce(const std::string& req_, model::Game& game_) {
+        std::cout << "Prepare Resp: req_" << req_ << std::endl;
         const std::vector<model::Map>& maps = game_.GetMaps();
         boost::json::array response_text;
         if (req_ == "maps") {
@@ -13,9 +14,10 @@ namespace http_handler {
                 response_text.push_back(mapJson);
             }
         } else {
+            std::cout << "Prepare Resp2: req_" << req_ << std::endl;
             model::Map::Id id_{req_};
             const model::Map* map = game_.FindMap(id_);
-            if (!map) {
+            if (map != nullptr) {
                 boost::json::object mapJson;
                 mapJson["id"] = *map->GetId();
                 mapJson["name"] = map->GetName();
