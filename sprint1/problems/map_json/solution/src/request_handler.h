@@ -96,6 +96,7 @@ public:
         }
         response.body() = text;
         response.content_length(text.size());
+        response.set(http::field::content_type, ContentType::JSON);
         response.keep_alive(req.keep_alive());
         response.prepare_payload();
         
