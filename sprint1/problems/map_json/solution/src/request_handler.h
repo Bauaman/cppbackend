@@ -23,7 +23,7 @@ public:
     struct ContentType {
         ContentType() = delete;
         constexpr static std::string_view TEXT_HTML = "text/html"sv;
-        constexpr static std::string_view JSON = "applicationg/json"sv;
+        constexpr static std::string_view JSON = "application/json"sv;
     };
 
     boost::json::value PrepareResponce(const std::string& req_, model::Game& game_);
