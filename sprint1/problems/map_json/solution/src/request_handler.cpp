@@ -30,8 +30,8 @@ namespace http_handler {
                     boost::json::object road_;
                     if (road.IsHorizontal()) {
                         road_["x0"] = road.GetStart().x;
-                        road_["y0"] = road.GetStart().y;
                         road_["x1"] = road.GetEnd().x;
+                        road_["y0"] = road.GetStart().y;
                     }
                     if (road.IsVertical()) {
                         road_["x0"] = road.GetStart().x;
