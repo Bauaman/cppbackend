@@ -72,13 +72,14 @@ public:
             try {
                 std::string req_ = RequestParser(req);
                 boost::json::value response_body = PrepareResponce(req_, game_);
-                if (response_body.as_array().at(0).as_object().find("code") != response_body.as_array().at(0).as_object().end()) {
+                if (response_body.json()[0]["code"] == "mapNotFound") {
                     status = http::status::not_found;
                 } else {
                     status = http::status::ok;
                 }
                 text = boost::json::serialize(response_body);
             } catch (std::logic_error& ex) {
+                std::cout << "catched ex" << std::endl;
                 status = http::status::bad_request;
                 boost::json::value jsonArr = {
                     {"code", "badRequest"},
