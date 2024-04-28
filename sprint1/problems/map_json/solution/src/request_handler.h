@@ -23,7 +23,7 @@ public:
     struct ContentType {
         ContentType() = delete;
         constexpr static std::string_view TEXT_HTML = "text/html"sv;
-        constexpr static std::string_view JSON = "application/json"sv;
+        constexpr static std::string_view JSON = "applicationg/json"sv;
     };
 
     boost::json::value PrepareResponce(const std::string& req_, model::Game& game_);
@@ -67,19 +67,27 @@ public:
         auto data = req.body();
         http::status status;
         std::string text;
-
+        std::string req_;
         if ((req.method() == http::verb::get) || (req.method() == http::verb::head)) {
             try {
-                std::string req_ = RequestParser(req);
+                req_ = RequestParser(req);
+                std::cout << "After parser: " << req_ << std::endl;
                 boost::json::value response_body = PrepareResponce(req_, game_);
-                if (response_body.json()[0]["code"] == "mapNotFound") {
-                    status = http::status::not_found;
+
+                status = http::status::ok;
+
+                
+                if (response_body.is_object()) {
+                    if (response_body.as_object().find("code") != response_body.as_object().end() && 
+                        response_body.as_object().at("code") == "mapNotFound") {
+                        status = http::status::not_found;
+                    }
                 } else {
                     status = http::status::ok;
                 }
                 text = boost::json::serialize(response_body);
             } catch (std::logic_error& ex) {
-                std::cout << "catched ex" << std::endl;
+                std::cout << "catched ex " << ex.what() << "from Request Parser" << std::endl;
                 status = http::status::bad_request;
                 boost::json::value jsonArr = {
                     {"code", "badRequest"},
@@ -97,7 +105,6 @@ public:
         }
         response.body() = text;
         response.content_length(text.size());
-        response.set(http::field::content_type, ContentType::JSON);
         response.keep_alive(req.keep_alive());
         response.prepare_payload();
         
