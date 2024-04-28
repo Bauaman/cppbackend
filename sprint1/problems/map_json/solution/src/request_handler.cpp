@@ -52,7 +52,7 @@ namespace http_handler {
                     build_["h"] = building.GetBounds().size.height;
                     buildings.push_back(build_);
                 }
-                response_text_obj["buildings"] = roads;
+                response_text_obj["buildings"] = buildings;
                 boost::json::array offices;
                 for (const auto& office : map->GetOffices()) {
                     boost::json::object office_;
