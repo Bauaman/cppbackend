@@ -103,6 +103,7 @@ public:
         if (status == http::status::method_not_allowed) {
             response.set(http::field::allow, "GET, HEAD"sv);
         }
+        response.set(http::field::content_type, ContentType::JSON);
         response.body() = text;
         response.content_length(text.size());
         response.keep_alive(req.keep_alive());
