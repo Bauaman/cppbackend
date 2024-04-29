@@ -66,9 +66,18 @@ void AddMapsToGame (const boost::json::value& parsed, model::Game& game) {
     for (auto& map : parsed.as_array()) {
         model::Map::Id id{map.as_object().at("id").as_string().c_str()};
         model::Map map_i = model::Map{id, map.as_object().at("name").as_string().c_str()};
-        AddRoadsToMap(map.as_object().at("roads").as_array(), map_i);
-        AddBuildingsToMap(map.as_object().at("buildings").as_array(), map_i);
-        AddOfficesToMap(map.as_object().at("offices").as_array(), map_i);
+        for (const auto& pair : map.as_object()) {
+            map_i.FillKeysVector(pair.key_c_str());
+            if (pair.key() == "roads") {
+                AddRoadsToMap(map.as_object().at("roads").as_array(), map_i);
+            }
+            if (pair.key() == "buildings") {
+                AddBuildingsToMap(map.as_object().at("buildings").as_array(), map_i);
+            }
+            if (pair.key() == "buildings") {
+                AddOfficesToMap(map.as_object().at("offices").as_array(), map_i);
+            }
+        }
         game.AddMap(map_i);
     }
 }

@@ -35,4 +35,12 @@ void Game::AddMap(Map map) {
     }
 }
 
+void Map::FillKeysVector(const std::string str) {
+    keys_vector.push_back(str);
+}
+
+std::vector<std::string> Map::GetKeys() const{
+    return keys_vector;
+}
+
 }  // namespace model

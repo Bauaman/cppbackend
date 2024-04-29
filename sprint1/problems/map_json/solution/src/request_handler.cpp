@@ -7,6 +7,7 @@ namespace http_handler {
         boost::json::object response_text_obj;
         std::cout << "Prepare Response function: " << req_ << std::endl;
         const std::vector<model::Map>& maps = game_.GetMaps();
+        
         if (req_.empty()) {
             throw std::logic_error("bad request /api/v1/maps/...");
         }
@@ -22,49 +23,56 @@ namespace http_handler {
             model::Map::Id  id_{req_};
             const model::Map* map = game_.FindMap(id_);
             if (map != nullptr) {
+                std::vector<std::string> keys_in_map = map->GetKeys();
                 std::cout << "Map found" << std::endl;
-                response_text_obj["id"] = *map->GetId();
-                response_text_obj["name"] = map->GetName();
-                boost::json::array roads;
-                for (const auto& road : map->GetRoads()) {
-                    boost::json::object road_;
-                    if (road.IsHorizontal()) {
-                        road_["x0"] = road.GetStart().x;
-                        road_["y0"] = road.GetStart().y;
-                        road_["x1"] = road.GetEnd().x;
+                for (const auto& key : keys_in_map) {
+                    if (key == "id") {
+                        response_text_obj["id"] = *map->GetId();
+                    } else if (key == "name") {
+                        response_text_obj["name"] = map->GetName();
+                    } else if (key == "roads") {
+                        boost::json::array roads;
+                        for (const auto& road : map->GetRoads()) {
+                            boost::json::object road_;
+                            if (road.IsHorizontal()) {
+                                road_["x0"] = road.GetStart().x;
+                                road_["y0"] = road.GetStart().y;
+                                road_["x1"] = road.GetEnd().x;
+                            }
+                            if (road.IsVertical()) {
+                                road_["x0"] = road.GetStart().x;
+                                road_["y0"] = road.GetStart().y;
+                                road_["y1"] = road.GetEnd().y;
+                            }
+                            roads.push_back(road_);
+                        }
+                        response_text_obj["roads"] = roads;
+                    } else if(key == "buildings") {
+                        boost::json::array buildings;
+                        for (const auto& building : map->GetBuildings()) {
+                            boost::json::object build_;
+                            build_["x"] = building.GetBounds().position.x;
+                            build_["y"] = building.GetBounds().position.y;
+                            build_["w"] = building.GetBounds().size.width;
+                            build_["h"] = building.GetBounds().size.height;
+                            buildings.push_back(build_);
+                        }
+                        response_text_obj["buildings"] = buildings;
+                    } else if (key == "offices") {
+                        boost::json::array offices;
+                        for (const auto& office : map->GetOffices()) {
+                            boost::json::object office_;
+                            office_["id"] = *office.GetId();
+                            office_["x"] = office.GetPosition().x;
+                            office_["y"] = office.GetPosition().y;
+                            office_["offsetX"] = office.GetOffset().dx;
+                            office_["offsetY"] = office.GetOffset().dy;
+                            offices.push_back(office_);
+                        }
+                        response_text_obj["offices"]=offices;
+                        return response_text_obj;
                     }
-                    if (road.IsVertical()) {
-                        road_["x0"] = road.GetStart().x;
-                        road_["y0"] = road.GetStart().y;
-                        road_["y1"] = road.GetEnd().y;
-                    }
-                    roads.push_back(road_);
                 }
-                response_text_obj["roads"] = roads;
-                //mapJson.as_object().emplace({"roads", roads});
-                //mapJson.["roads"] = roads;
-                boost::json::array buildings;
-                for (const auto& building : map->GetBuildings()) {
-                    boost::json::object build_;
-                    build_["x"] = building.GetBounds().position.x;
-                    build_["y"] = building.GetBounds().position.y;
-                    build_["w"] = building.GetBounds().size.width;
-                    build_["h"] = building.GetBounds().size.height;
-                    buildings.push_back(build_);
-                }
-                response_text_obj["buildings"] = buildings;
-                boost::json::array offices;
-                for (const auto& office : map->GetOffices()) {
-                    boost::json::object office_;
-                    office_["id"] = *office.GetId();
-                    office_["x"] = office.GetPosition().x;
-                    office_["y"] = office.GetPosition().y;
-                    office_["offsetX"] = office.GetOffset().dx;
-                    office_["offsetY"] = office.GetOffset().dy;
-                    offices.push_back(office_);
-                }
-                response_text_obj["offices"]=offices;
-                return response_text_obj;
             } else {
                 std::cout << "Map NOT found" << std::endl;
                 response_text_obj["code"] = "mapNotFound";

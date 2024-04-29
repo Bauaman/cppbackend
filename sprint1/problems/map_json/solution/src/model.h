@@ -155,6 +155,10 @@ public:
 
     void AddOffice(Office office);
 
+    void FillKeysVector(const std::string str);
+
+    std::vector<std::string> GetKeys() const;
+
 private:
     using OfficeIdToIndex = std::unordered_map<Office::Id, size_t, util::TaggedHasher<Office::Id>>;
 
@@ -162,6 +166,7 @@ private:
     std::string name_;
     Roads roads_;
     Buildings buildings_;
+    std::vector<std::string> keys_vector;
 
     OfficeIdToIndex warehouse_id_to_index_;
     Offices offices_;
