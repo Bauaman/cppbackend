@@ -7,16 +7,10 @@ namespace http_handler {
         for (const auto& road : map.GetRoads()) {
             boost::json::object road_;
             for (const std::string str : road.GetKeys()) {
-                if (road.IsHorizontal()) {
-                    if (str == "x0") {road_["x0"] = road.GetStart().x;}
-                    if (str == "x1") {road_["x1"] = road.GetEnd().x;}
-                    if (str == "y0") {road_["y0"] = road.GetStart().y;}
-                }
-                if (road.IsVertical()) {
-                    if (str == "x0") {road_["x0"] = road.GetStart().x;}
-                    if (str == "y0") {road_["y0"] = road.GetStart().y;}
-                    if (str == "y1") {road_["y1"] = road.GetEnd().y;}
-                }
+                if (str == "x0") {road_["x0"] = road.GetStart().x;}
+                if (str == "x1") {road_["x1"] = road.GetEnd().x;}
+                if (str == "y0") {road_["y0"] = road.GetStart().y;}
+                if (str == "y1") {road_["y1"] = road.GetEnd().y;}
             }
             roads.push_back(road_);
         }
@@ -78,7 +72,7 @@ namespace http_handler {
                 std::vector<std::string> keys_in_map = map->GetKeys();
                 //std::cout << "Map found" << std::endl;
                 for (const auto& key : keys_in_map) {
-                    //std::cout << "Keys in map : " << key << std::endl;
+                    std::cout << "Keys in map : " << key << std::endl;
                     if (key == "id") {
                         response_text_obj["id"] = *map->GetId();
                     } else if (key == "name") {

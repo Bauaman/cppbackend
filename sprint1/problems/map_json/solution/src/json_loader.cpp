@@ -35,7 +35,6 @@ void AddRoadsToMap(const boost::json::value& parsed, model::Map& map) {
             road_ = {model::Road::VERTICAL, 
                     {static_cast<int>(road.as_object().at("x0").as_int64()), static_cast<int>(road.as_object().at("y0").as_int64())},
                     static_cast<int>(road.as_object().at("y1").as_int64())};
-            map.AddRoad(road_);
         }
         for (const auto& pair : road.as_object()) {
             road_.SetKeySequence(pair.key_c_str());
