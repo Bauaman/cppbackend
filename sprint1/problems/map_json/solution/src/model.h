@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 #include <boost/json.hpp>
 #include "tagged.h"
@@ -9,6 +10,19 @@ namespace model {
 
 using Dimension = int;
 using Coord = Dimension;
+
+class Element {
+public:
+    void SetKeySequence(std::string str) {
+        keys_.push_back(str);
+    }
+
+    std::vector<std::string> GetKeys() const {
+        return keys_;
+    }
+private:
+    std::vector<std::string> keys_;
+};
 
 struct Point {
     Coord x, y;
@@ -27,7 +41,7 @@ struct Offset {
     Dimension dx, dy;
 };
 
-class Road {
+class Road : public Element {
     struct HorizontalTag {
         explicit HorizontalTag() = default;
     };
@@ -39,6 +53,8 @@ class Road {
 public:
     constexpr static HorizontalTag HORIZONTAL{};
     constexpr static VerticalTag VERTICAL{};
+
+    explicit Road() = default;
 
     Road(HorizontalTag, Point start, Coord end_x) noexcept
         : start_{start}
@@ -71,7 +87,7 @@ private:
     Point end_;
 };
 
-class Building {
+class Building : public Element {
 public:
     explicit Building(Rectangle bounds) noexcept
         : bounds_{bounds} {
@@ -85,7 +101,7 @@ private:
     Rectangle bounds_;
 };
 
-class Office {
+class Office : public Element {
 public:
     using Id = util::Tagged<std::string, Office>;
 
@@ -106,19 +122,29 @@ public:
     Offset GetOffset() const noexcept {
         return offset_;
     }
+/*
+    void SetKeySequence(std::string str) {
+        keys_.push_back(str);
+    }
 
+    std::vector<std::string> GetKeys() const {
+        return keys_;
+    }
+*/
 private:
     Id id_;
     Point position_;
     Offset offset_;
+    std::vector<std::string> keys_;
 };
 
-class Map {
+class Map : public Element {
 public:
     using Id = util::Tagged<std::string, Map>;
     using Roads = std::vector<Road>;
     using Buildings = std::vector<Building>;
     using Offices = std::vector<Office>;
+    using Value = std::variant<Id, std::string, std::vector<Road>, std::vector<Building>, std::vector<Office>>;
 
     Map(Id id, std::string name) noexcept
         : id_(std::move(id))
@@ -154,11 +180,11 @@ public:
     }
 
     void AddOffice(Office office);
-
+/*
     void FillKeysVector(const std::string str);
 
     std::vector<std::string> GetKeys() const;
-
+*/
 private:
     using OfficeIdToIndex = std::unordered_map<Office::Id, size_t, util::TaggedHasher<Office::Id>>;
 
@@ -166,7 +192,7 @@ private:
     std::string name_;
     Roads roads_;
     Buildings buildings_;
-    std::vector<std::string> keys_vector;
+    //std::vector<std::string> keys_vector_;
 
     OfficeIdToIndex warehouse_id_to_index_;
     Offices offices_;
