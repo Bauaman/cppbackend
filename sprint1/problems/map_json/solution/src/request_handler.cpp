@@ -17,8 +17,8 @@ namespace http_handler {
                     if (str == "y0") {road_["y0"] = road.GetStart().y;}
                     if (str == "y1") {road_["y1"] = road.GetEnd().y;}
                 }
-                roads.push_back(road_);
             }
+            roads.push_back(road_);
         }
         return roads;
     }
