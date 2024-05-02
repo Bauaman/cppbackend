@@ -1,4 +1,4 @@
-FROM gcc::11.3 as build
+FROM gcc:11.3 as build
 
 RUN apt update && \
     apt install -y \
