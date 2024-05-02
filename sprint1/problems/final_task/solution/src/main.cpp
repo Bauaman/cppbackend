@@ -58,6 +58,7 @@ int main(int argc, const char* argv[]) {
         
         const auto address = net::ip::make_address("0.0.0.0");
         constexpr net::ip::port_type port = 8080;
+	std::cout << "Hello! Server is starting at port " << port << std::endl;
         http_server::ServeHttp(ioc, {address, port}, [&handler](auto&& req, auto&& send) {
             handler(std::forward<decltype(req)>(req), std::forward<decltype(send)>(send));
         });
