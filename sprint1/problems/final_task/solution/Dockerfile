@@ -20,7 +20,7 @@ RUN cd /app/build && \
 
 FROM ubuntu:22.04 as run
 
-RUN groupapp -r www && useradd -r -g www www
+RUN groupadd -r www && useradd -r -g www www
 USER www
 
 COPY --from=build /app/build/bin/game_server /app/
