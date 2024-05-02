@@ -7,7 +7,7 @@ RUN apt update && \
     && \
     pip3 install conan==1.*
 
-COPY conanfile.txt/app/
+COPY conanfile.txt /app/
 RUN mkdir /app/build && cd app/build && \
     conan install .. --build=missing
 
