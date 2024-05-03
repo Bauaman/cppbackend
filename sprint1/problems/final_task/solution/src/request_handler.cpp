@@ -72,7 +72,7 @@ namespace http_handler {
                 std::vector<std::string> keys_in_map = map->GetKeys();
                 //std::cout << "Map found" << std::endl;
                 for (const auto& key : keys_in_map) {
-                    std::cout << "Keys in map : " << key << std::endl;
+                    //std::cout << "Keys in map : " << key << std::endl;
                     if (key == "id") {
                         response_text_obj["id"] = *map->GetId();
                     } else if (key == "name") {
