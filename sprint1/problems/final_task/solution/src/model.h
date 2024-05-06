@@ -6,6 +6,20 @@
 #include <boost/json.hpp>
 #include "tagged.h"
 
+namespace strconsts {
+
+    static const std::string x_start = "x0";
+    static const std::string x_end = "x1";
+    static const std::string y_start = "y0";
+    static const std::string y_end = "y1";
+    static const std::string x_offset = "offsetX";
+    static const std::string y_offset = "offsetY";
+    static const std::string x_str = "x";
+    static const std::string y_str = "y";
+    static const std::string h_str = "h";
+    static const std::string w_str = "w";
+}
+
 namespace model {
 
 using Dimension = int;
@@ -54,7 +68,7 @@ public:
     constexpr static HorizontalTag HORIZONTAL{};
     constexpr static VerticalTag VERTICAL{};
 
-    explicit Road() = default;
+    //explicit Road() = default;
 
     Road(HorizontalTag, Point start, Coord end_x) noexcept
         : start_{start}
@@ -122,15 +136,7 @@ public:
     Offset GetOffset() const noexcept {
         return offset_;
     }
-/*
-    void SetKeySequence(std::string str) {
-        keys_.push_back(str);
-    }
 
-    std::vector<std::string> GetKeys() const {
-        return keys_;
-    }
-*/
 private:
     Id id_;
     Point position_;
@@ -180,11 +186,7 @@ public:
     }
 
     void AddOffice(Office office);
-/*
-    void FillKeysVector(const std::string str);
 
-    std::vector<std::string> GetKeys() const;
-*/
 private:
     using OfficeIdToIndex = std::unordered_map<Office::Id, size_t, util::TaggedHasher<Office::Id>>;
 
@@ -192,7 +194,6 @@ private:
     std::string name_;
     Roads roads_;
     Buildings buildings_;
-    //std::vector<std::string> keys_vector_;
 
     OfficeIdToIndex warehouse_id_to_index_;
     Offices offices_;
