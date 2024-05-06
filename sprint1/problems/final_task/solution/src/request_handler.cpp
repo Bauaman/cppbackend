@@ -6,7 +6,7 @@ namespace http_handler {
     std::string RequestParser(const std::string& req_target) {
         size_t pos = req_target.find("/api/v1/");
         if (pos != std::string::npos) { //проверка на правильный префикс
-            std::string req_ = req_target.substr(pos+7);
+            std::string req_ = req_target.substr(pos + 8);
             size_t next_slash_pos = req_.find('/');
 
             if (next_slash_pos != req_.length() && next_slash_pos != std::string::npos) {
