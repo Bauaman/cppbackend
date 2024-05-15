@@ -41,15 +41,6 @@ class Logger {
     Logger() = default;
     Logger(const Logger&) = delete;
 
-    template <typename T, typename... Ts>
-    void LogInternal(std::string prefix, const T& arg, const Ts&... args) {
-        logfile_ << prefix << arg;
-        LogInternal(prefix, args...);
-    }
-
-    void LogInternal(std::string) {
-    }
-
 public:
     static Logger& GetInstance() {
         static Logger obj;
@@ -61,10 +52,6 @@ public:
     void Log(const Ts&... args) {
         const auto time_stamp = GetTimeStamp();
         const auto file_time_stamp = GetFileTimeStamp();
-
-        std::ostringstream oss;
-        oss << time_stamp << ": ";
-        LogInternal(oss.str(), args...);
 
         std::lock_guard<std::mutex> lock(mutex_);
         if (current_file_ts_ != file_time_stamp) {
