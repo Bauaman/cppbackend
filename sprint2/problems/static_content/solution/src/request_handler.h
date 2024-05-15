@@ -155,7 +155,8 @@ public:
             std::string filepath = root_dir + normalized_path;
             std:: cout << "filepath: " << filepath << std::endl;
             if (fs::is_directory(filepath)) {
-                filepath += "index.htm";
+                filepath = filepath + "index.html";
+                std::cout << "Path to dir: " << filepath << std::endl;
             }
             if (!IsSubPath(fs::path(root_dir), filepath)/*filepath.find(root_dir) != 0*/) {
                 http::response<http::string_body> response(http::status::bad_request, req.version());
