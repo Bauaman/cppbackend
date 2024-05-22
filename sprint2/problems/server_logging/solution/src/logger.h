@@ -24,11 +24,11 @@ class Logger {
 public:
     void InitLogging(std::string filename) {
         logging::add_common_attributes();
-        g_file_sink = logging::add_file_log(
+        /*g_file_sink = logging::add_file_log(
             keywords::file_name = filename,
             keywords::format = &MyFormatter,
             keywords::open_mode = std::ios_base::app | std::ios_base::out
-        );
+        );*/
         logging::add_console_log(std::clog,
             keywords::format = &MyFormatter,
             keywords::auto_flush = true
