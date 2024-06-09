@@ -29,7 +29,7 @@ public:
             keywords::format = &MyFormatter,
             keywords::open_mode = std::ios_base::app | std::ios_base::out
         );*/
-        logging::add_console_log(std::clog,
+        logging::add_console_log(std::cout,
             keywords::format = &MyFormatter,
             keywords::auto_flush = true
         );

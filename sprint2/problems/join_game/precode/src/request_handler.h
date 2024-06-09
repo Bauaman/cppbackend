@@ -5,6 +5,8 @@
 #include <chrono>
 #include <filesystem>
 #include <iostream>
+#include "aux.h"
+#include "content.h"
 #include "http_server.h"
 #include "model.h"
 
@@ -18,17 +20,6 @@ namespace logging = boost::log;
 
 using namespace std::literals;
 
-
-enum class RequestType {
-    API,
-    STATIC_FILE
-};
-
-struct RequestData {
-    RequestType req_type;
-    std::string req_data;
-};
-
 boost::json::value PrepareOfficesForResponce(const model::Map& map);
 boost::json::value PrepareBuildingsForResponce(const model::Map& map);
 boost::json::value PrepareRoadsForResponse(const model::Map& map);
@@ -41,21 +32,31 @@ using ResponseVariant = std::variant<http::response<http::string_body>, http::re
 
 public:
 
-    LoggingRequestHandler(RequestHandler& decorated) :
-        decorated_(decorated) {
+    LoggingRequestHandler(RequestHandler&& handler) :
+        decorated_(std::forward<RequestHandler>(handler)) {
         }
 
     template <typename Body, typename Allocator, typename Send>
-    void operator()(http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send, const std::string& root_dir, const std::string& address_string) {
-        std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now();
-        LogRequest(req, address_string);
-        ResponseVariant response = PrepareResponse(std::move(req), root_dir);
-        std::chrono::system_clock::time_point end_time = std::chrono::system_clock::now();
-        auto response_time = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
-        LogResponse(response, address_string, response_time);
-        send(response);
+    void operator()(http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send) {
+        std::chrono::high_resolution_clock timer;
+        auto start = timer.now();
+        LogRequest(req);
+        
+        std::string content_type = "null";
+        int code_result;
 
+        decorated_(std::move(req), [s = std::move(send), &content_type, &code_result](auto&& response) {
+        
+        code_result = response.result_int();
+        content_type = static_cast<std::string>(response.at(http::field::content_type));
+        s(response);
+        });
+        
+        auto stop = timer.now();
+        auto deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
 
+        LogResponse(deltaTime, code_result, content_type);
+        return;
     }
 
 private:
@@ -107,82 +108,19 @@ class RequestHandler {
 
     using ResponseVariant = std::variant<http::response<http::string_body>, http::response<http::file_body>>;
     using SendFunction = std::function<void(ResponseVariant)>;
+    using Strand = net::strand<net::io_context::executor_type>;
 
 public:
-    explicit RequestHandler(model::Game& game)
+    explicit RequestHandler(net::io_context ioc, Strand api_strand, model::Game& game)
         : game_{game} {
     }
 
     RequestHandler(const RequestHandler&) = delete;
     RequestHandler& operator=(const RequestHandler&) = delete;
 
-    struct ContentType {
-        ContentType() = delete;
-        constexpr static std::string_view TEXT_HTML = "text/html"sv;
-        constexpr static std::string_view JSON = "application/json"sv;
-        constexpr static std::string_view CSS = "text/css"sv;
-        constexpr static std::string_view PLAIN = "text/plain"sv;
-        constexpr static std::string_view JAVASCRIPT = "text/javascript"sv;
-        constexpr static std::string_view XML = "application/xml"sv;
-        constexpr static std::string_view PNG = "image/png"sv;
-        constexpr static std::string_view JPG = "image/jpeg"sv;
-        constexpr static std::string_view GIF = "image/gif"sv;
-        constexpr static std::string_view BMP = "image/bmp"sv;
-        constexpr static std::string_view ICO = "image/vnd.microsoft.icon"sv;
-        constexpr static std::string_view TIFF = "image/tiff"sv;
-        constexpr static std::string_view SVG = "image/svg+xml"sv;
-        constexpr static std::string_view MP3 = "audio/mpeg"sv;
-        constexpr static std::string_view UNKNOWN = "application/octet-stream"sv;
-    };
 
-    bool IsSubPath(fs::path base, fs::path path) {
-        path = fs::weakly_canonical(path);
-        base = fs::weakly_canonical(base);
-
-        for (auto b = base.begin(), p = path.begin(); b != base.end(); ++b, ++p) {
-            if (p == path.end() || *p != *b) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    std::string_view ExtensionToContentType(fs::path filepath) {
-        std::string extension = filepath.extension().string();
-        if (extension == ".htm" || extension == ".html")
-                return ContentType::TEXT_HTML;
-            else if (extension == ".json")
-                return ContentType::JSON;
-            else if (extension == ".css")
-                return ContentType::CSS;
-            else if (extension == ".txt")
-                return ContentType::PLAIN;
-            else if (extension == ".js")
-                return ContentType::JAVASCRIPT;
-            else if (extension == ".xml")
-                return ContentType::XML;
-            else if (extension == ".png")
-                return ContentType::PNG;
-            else if (extension == ".jpg" || extension == ".jpeg" || extension == ".jpe")
-                return ContentType::JPG;
-            else if (extension == ".gif")
-                return ContentType::GIF;
-            else if (extension == ".bmp")
-                return ContentType::BMP;
-            else if (extension == ".ico")
-                return ContentType::ICO;
-            else if (extension == ".tiff" || extension == ".tif")
-                return ContentType::TIFF;
-            else if (extension == ".svg" || extension == ".svgz")
-                return ContentType::SVG;
-            else if (extension == ".mp3")
-                return ContentType::MP3;
-            else
-                return ContentType::UNKNOWN;
-    }
-
-    template <typename Body, typename Allocator/*, typename Send*/>
-    /*void*/ResponseVariant operator()(http::request<Body, http::basic_fields<Allocator>>&& req/*, Send&& send*/, const std::string& root_dir) {
+    template <typename Body, typename Allocator, typename Send>
+    ResponseVariant operator()(http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send) {
         // Обработать запрос request и отправить ответ, используя send
         auto data = req.body();
         RequestData req_;
@@ -203,7 +141,6 @@ public:
                 PrepareResponseBadRequestInvalidMethod(resp);
                 resp.keep_alive(req.keep_alive());
                 resp.prepare_payload();
-                //send(std::move(resp));
                 return resp;
             }
         } else {
@@ -212,7 +149,6 @@ public:
             PrepareResponseBadRequestInvalidMethod(resp);
             resp.keep_alive(req.keep_alive());
             resp.prepare_payload();
-            //send(std::move(resp));
             return resp;
         }
         return response_v;
@@ -232,9 +168,8 @@ private:
             throw std::logic_error("Failed to open file: " + filepath);
         }
         
-        //std::cout << "ExtensionToContentType: " << ExtensionToContentType(filepath) << std::endl;
         response.body() = std::move(file);
-        response.set(http::field::content_type, ExtensionToContentType(filepath));
+        //response.set(http::field::content_type, ExtensionToContentType(filepath));
         response.content_length(response.body().size());
         response.keep_alive(true);
     }
@@ -260,18 +195,15 @@ private:
         }
         
     }
-    //template <typename Send>
-    /*void*/ ResponseVariant HandleStaticFileRequest(/*Send&& send, */const http::request<http::basic_string_body<char>>& req, const RequestData& req_data, const std::string& root_dir) {
+
+    ResponseVariant HandleStaticFileRequest(const http::request<http::basic_string_body<char>>& req, const RequestData& req_data, const std::string& root_dir) {
         try {
             std::string normalized_path = fs::weakly_canonical(fs::path(req_data.req_data)).string();
-            //std::cout << "normalized path: " << normalized_path << std::endl;
             std::string filepath = root_dir + normalized_path;
-            //std:: cout << "filepath: " << filepath << std::endl;
             if (fs::is_directory(filepath)) {
                 filepath = filepath + "index.html";
-                //std::cout << "Path to dir: " << filepath << std::endl;
             }
-            if (!IsSubPath(fs::path(root_dir), filepath)) {
+            if (!auxillary::IsSubPath(fs::path(root_dir), filepath)) {
                 http::response<http::string_body> response(http::status::bad_request, req.version());
                 response.set(http::field::content_type, ContentType::PLAIN);
                 PrepareResponseBadRequestInvalidMethod(response);
@@ -279,12 +211,10 @@ private:
                 response.prepare_payload();
                 
                 return response;
-                //send(std::move(response));
             } else {
                 http::response<http::file_body> response(http::status::ok, req.version());
                 ReadStaticFile(filepath, response);
                 
-                //send(std::move(response));
                 return response;
             }
         } catch (const std::exception& ex) {
@@ -296,13 +226,11 @@ private:
             response.content_length(response.body().size());
             response.prepare_payload();
 
-            //send(response);
             return response;
         }
     }
 
-    //template <typename Send>
-    /*void*/http::response<http::string_body> HandleAPIRequest(/*Send&& send, */const http::request<http::basic_string_body<char>>& req, const RequestData& req_data) {
+    http::response<http::string_body> HandleAPIRequest(const http::request<http::basic_string_body<char>>& req, const RequestData& req_data) {
         http::response<http::string_body> response(http::status::ok, req.version());
         boost::json::value response_body = PrepareAPIResponce(req_data.req_data, game_);
         if (response_body.is_object()) {
@@ -317,7 +245,6 @@ private:
         response.content_length(response.body().size());
         response.prepare_payload();
         
-        //send(response);
         return response;
         
     }
