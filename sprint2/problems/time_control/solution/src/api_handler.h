@@ -59,11 +59,11 @@ public:
     http::response<http::string_body> HandleMapRequest() {
         json::value message;
         if (req_.method() != http::verb::get) {
-            return MakeResponse(http::status::method_not_allowed, Errors::GET_INVALID, req_.version(), req_.keep_alive(), ContentType::JSON, ""sv, "GET"sv);
+            return MakeResponse(http::status::method_not_allowed, Errors::GET_INVALID, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv, "GET"sv);
         }
         
         if (r_data_.r_target.empty()) {
-            return MakeResponse(http::status::bad_request, Errors::BAD_REQ, req_.version(), req_.keep_alive(), ContentType::JSON);
+            return MakeResponse(http::status::bad_request, Errors::BAD_REQ, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv);
         }
         if (r_data_.r_target == "maps") {
             json::array array;
@@ -72,7 +72,7 @@ public:
                 array.push_back(val);
             }
             message = array;
-            return MakeResponse(http::status::ok, json::serialize(message), req_.version(), req_.keep_alive(), ContentType::JSON); 
+            return MakeResponse(http::status::ok, json::serialize(message), req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv); 
         } else {
             json::object resp_message;
             model::Map::Id id_{r_data_.r_target};
@@ -98,10 +98,10 @@ public:
                     }
                 }
                 message = resp_message;
-                return MakeResponse(http::status::ok, json::serialize(message), req_.version(), req_.keep_alive(), ContentType::JSON);
+                return MakeResponse(http::status::ok, json::serialize(message), req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv);
                 
             } else {
-                return MakeResponse(http::status::not_found, Errors::MAP_NOT_FOUND, req_.version(), req_.keep_alive(), ContentType::JSON);
+                return MakeResponse(http::status::not_found, Errors::MAP_NOT_FOUND, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv);
                 
             }
         }
