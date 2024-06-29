@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <optional>
 
 #include "model_app.h"
 #include "model.h"
@@ -16,16 +17,16 @@ class GameSession {
     GameSession& operator=(const GameSession&) = delete;
 
 public:
-    explicit GameSession(const Map& map) :
+    explicit GameSession(std::shared_ptr<Map> map) :
         map_(map) {}
 
-    const Map& GetMap() const {
+    std::shared_ptr<Map> GetMap() const {
         return map_;
     }
 
     void AddDog(std::shared_ptr<Dog> dog, bool random_position) {
-        dog->SetPosition(map_.GetStartPosition(random_position));
-        dog->SetDefaultSpeed(map_.GetMapDogSpeed());
+        dog->SetPosition(map_->GetStartPosition(random_position));
+        dog->SetDefaultSpeed(map_->GetMapDogSpeed());
         dogs_.emplace_back(dog);
     }
 
@@ -60,7 +61,7 @@ public:
     }
 
 private:
-    const Map& map_;
+    std::shared_ptr<Map> map_;
     std::vector<std::weak_ptr<Dog>> dogs_;
 };
 
@@ -74,20 +75,20 @@ public:
         return maps_;
     }
 
-    const Map* FindMap(const Map::Id& id) const noexcept {
+    /*const Map* */ std::optional<std::shared_ptr<Map>> FindMap(const Map::Id& id) const noexcept {
         if (auto it = map_id_to_index_.find(id); it != map_id_to_index_.end()) {
-            return &maps_.at(it->second);
+            return std::make_shared<Map>(maps_.at(it->second));
         }
-        return nullptr;
+        return std::nullopt;
     }
 
     std::shared_ptr<GameSession> GetGameSession(const Map::Id& id) {
-        const Map* map = FindMap(id);
+        auto map = FindMap(id);
         if (!map) {
             throw std::invalid_argument("Map "s + *id + " doesn't exist"s);
         }
         for (auto& session : game_sessions_) {
-            if (session->GetMap().GetId() == id) {
+            if (session->GetMap()->GetId() == id) {
                 //std::cout << "Found session: " << std::endl;
                 return session;
             }

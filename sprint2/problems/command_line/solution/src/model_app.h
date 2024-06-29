@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <iomanip>
+#include <iostream>
 #include <memory>
 #include <random>
 #include <vector>
@@ -34,7 +35,12 @@ public:
         dog_position_(0., 0.),
         dog_speed_(0., 0.),
         dir_("U") {
+            std::cout << "Dog constr" << std::endl;
         }
+
+    ~Dog() {
+        std::cout << "Dog destr" << std::endl;
+    }
 
     int GetId() const {
         return dog_id_;
@@ -65,7 +71,7 @@ public:
         dog_position_.y_ = position.y_;
     }
 
-    void SetSpeed(/*const ParamPairDouble& speed*/) {
+    void SetSpeed() {
         if (dir_ == "U") {
             dog_speed_ = {0., -default_dog_speed_};
         } else if (dir_ == "R") {
@@ -125,7 +131,12 @@ public:
         player_id_(++player_id_counter_){
             SetDog(std::make_shared<Dog>(token));
             //dog_->SetPosition(dsp);
+            std::cout << "Player constr" << std::endl;
         }
+
+    ~Player() {
+        std::cout << "Player destr" << std::endl;
+    }
 
     Token GetPlayerToken() const {
         return player_token_;
@@ -183,24 +194,33 @@ private:
 };
 
 class PlayerList {
-public:    
-    Player* FindPlayer(const Token& token) {
+public:
+
+    PlayerList() {
+        std::cout << "Player list construct" << std::endl;
+    }
+
+    ~PlayerList() {
+        std::cout << "Player list destr" << std::endl;
+    }
+
+    /*Player**/std::shared_ptr<Player> FindPlayer(const Token& token) {
         if (players_.contains(token)) {
-            return &players_.at(token);
+            return players_.at(token);
         }
         return nullptr;
     }
 
-    Player& AddPlayer(const std::string& name, std::shared_ptr<GameSession> session/*, model::ParamPairDouble& dog_start_pos*/) {
+    /*Player&*/std::shared_ptr<Player> AddPlayer(const std::string& name, std::shared_ptr<GameSession> session) {
         Token token = GetToken();
-        auto p = players_.emplace(token, Player(token, name, session/*, dog_start_pos*/));
+        auto p = players_.emplace(token, std::make_shared<Player>(token, name, session));
         if (p.second) {
             return players_.at(token);
         }
         throw std::runtime_error("Failed to add player...");
     }
 
-    const std::unordered_map<Token, Player, TokenHasher>& GetPlayersList() const {
+    const std::unordered_map<Token, std::shared_ptr<Player>, TokenHasher>& GetPlayersList() const {
         return players_;
     }
     
@@ -213,7 +233,7 @@ public:
     }
 
 private:
-    std::unordered_map<Token, Player, TokenHasher> players_;
+    std::unordered_map<Token, std::shared_ptr<Player>, TokenHasher> players_;
 };
 
 }

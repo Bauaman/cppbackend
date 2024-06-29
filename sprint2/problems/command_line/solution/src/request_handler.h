@@ -34,7 +34,7 @@ public:
     explicit RequestHandler(net::io_context& ioc, GameServer& gs, net::strand<net::io_context::executor_type> api_strand) :
         ioc_(ioc),
         gs_(gs),
-        strand_(api_strand/*net::make_strand(ioc)*/) {}
+        strand_(api_strand) {}
 
     RequestHandler(const RequestHandler&) = delete;
     RequestHandler& operator=(const RequestHandler&) = delete;
@@ -42,23 +42,21 @@ public:
     template <typename Body, typename Allocator, typename Send>
     void operator()(http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send) {  
         try {
-            std::string req_target = std::string(req.target());
-            RequestData r_data = RequestParser(auxillary::UrlDecode(req_target));
+            std::string req_target = auxillary::UrlDecode(std::string(req.target()));
+            RequestData r_data = RequestParser(req_target);
             //std::cout << "r_data parsed successfully: " << r_data.r_target << " " << toString(r_data.type) << std::endl;
             if (r_data.type != RequestType::FILE /*запрос к API*/) {
                 
-                return boost::asio::dispatch(strand_, [self = shared_from_this(), api_handler = std::make_shared<ApiHandler<Body,Allocator,Send>>(req, gs_, r_data), send = std::move(send)] {
+                auto req_ptr = std::make_shared<http::request<Body, http::basic_fields<Allocator>>>(std::move(req));
+
+                return boost::asio::dispatch(strand_, [self = shared_from_this(),
+                                                        api_handler = std::make_shared<ApiHandler<Body,Allocator,Send>>(*req_ptr, gs_, r_data), 
+                                                        send = std::move(send)] {
                     // Этот assert не выстрелит, так как лямбда-функция будет выполняться внутри strand
                     assert(self->strand_.running_in_this_thread());
                     send(api_handler->HandleRequest());
                 });
                 return;
-                /*
-                return net::dispatch(strand_, [self = shared_from_this(), req = std::move(req), send = std::move(send), r_data = std::move(r_data)]{
-                    assert(self->strand_.running_in_this_thread());
-                    ApiHandler api_handler(self->gs_, req, r_data);
-                    send(api_handler.HandleRequest());
-                });*/
             }
             
             return std::visit([&send](auto&& result) {
@@ -125,7 +123,9 @@ public:
         std::string content_type = "null";
         int code_result;
 
-        decorated_(std::move(req), [s = std::move(send), &content_type, &code_result](auto&& response){
+        auto req_ptr = std::make_shared<http::request<Body, http::basic_fields<Allocator>>>(std::move(req));
+
+        decorated_(/*std::move(req)*/ std::move(*req_ptr), [s = std::move(send), &content_type, &code_result](auto&& response){
             code_result = response.result_int();
             content_type = static_cast<std::string>(response.at(http::field::content_type));
             s(response);

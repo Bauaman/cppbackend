@@ -30,7 +30,7 @@ public:
         return root_dir_;
     }
 
-    const model::Map* FindMap(const model::Map::Id& id) const noexcept {
+    std::optional<std::shared_ptr<model::Map>> FindMap(const model::Map::Id& id) const noexcept {
         return game_.FindMap(id);
     }
 
@@ -38,15 +38,15 @@ public:
         return game_.GetMaps();
     }
 
-    model::Player& JoinGame(model::Map::Id id, const std::string& player_name) {
+    /*model::Player&*/std::shared_ptr<model::Player> JoinGame(model::Map::Id id, const std::string& player_name) {
         auto session = game_.GetGameSession(id);
         if (!session) {
             throw std::runtime_error("Failed to create game session...");
         }
         //model::ParamPairDouble dog_start_position = game_.FindMap(id)->GetRandomDogPosition();
         //std::cout << "Random dog position: " << dog_start_position.x_ << ", " << dog_start_position.y_ << std::endl;
-        auto& player = player_list_.AddPlayer(player_name, session/*, dog_start_position*/);
-        auto dog = player.GetDog();
+        auto player = player_list_.AddPlayer(player_name, session/*, dog_start_position*/);
+        auto dog = player->GetDog();
         //dog->SetDefaultSpeed(session->GetMap().GetMapDogSpeed());
         session->AddDog(dog, spawn_dog_random);
         //std::cout << "Game dog speed " << game_.GetDefaultDogSpeed() << std::endl;
@@ -54,11 +54,11 @@ public:
         return player;
     }
 
-    const model::Player* FindPlayer(const model::Token& token) {
+    std::shared_ptr<const model::Player> FindPlayer(const model::Token& token) {
         return player_list_.FindPlayer(token);
     }
 
-    const std::unordered_map<model::Token, model::Player, model::TokenHasher>& GetPlayers() const noexcept {
+    const std::unordered_map<model::Token, std::shared_ptr<model::Player>, model::TokenHasher>& GetPlayers() const noexcept {
         return player_list_.GetPlayersList();
     }
 

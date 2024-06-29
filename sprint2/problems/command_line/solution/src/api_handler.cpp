@@ -3,9 +3,9 @@
 namespace http_handler {
 
 using namespace strconsts;
-boost::json::value PrepareRoadsForResponse(const model::Map& map) {
+boost::json::value PrepareRoadsForResponse(std::optional<std::shared_ptr<model::Map>> map) {
     boost::json::array roads;
-    for (const auto& road : map.GetRoads()) {
+    for (const auto& road : map->get()->GetRoads()) {
         boost::json::object road_;
         for (const std::string& str : road.GetKeys()) {
             if (str == x_start) {road_[x_start] = road.GetStart().x;}
@@ -18,9 +18,9 @@ boost::json::value PrepareRoadsForResponse(const model::Map& map) {
     return roads;
 }
 
-boost::json::value PrepareBuildingsForResponce(const model::Map& map) {
+boost::json::value PrepareBuildingsForResponce(std::optional<std::shared_ptr<model::Map>> map) {
     boost::json::array buildings;
-    for (const auto& building : map.GetBuildings()) {
+    for (const auto& building : map->get()->GetBuildings()) {
         boost::json::object build_;
         for (const std::string& str : building.GetKeys()) {
             if (str == x_str) {build_[x_str] = building.GetBounds().position.x;}
@@ -33,9 +33,9 @@ boost::json::value PrepareBuildingsForResponce(const model::Map& map) {
     return buildings;
 }
 
-boost::json::value PrepareOfficesForResponce(const model::Map& map) {
+boost::json::value PrepareOfficesForResponce(std::optional<std::shared_ptr<model::Map>> map) {
     boost::json::array offices;
-    for (const auto& office : map.GetOffices()) {
+    for (const auto& office : map->get()->GetOffices()) {
         boost::json::object office_;
         for (const std::string& str : office.GetKeys()) {
             if (str == "id") {office_["id"] = *office.GetId();}
