@@ -44,7 +44,7 @@ namespace http_server {
             return SessionBase::Close();
         }
         if (ec) {
-            std::cout << "EC in OnRead" << std::endl;
+            //std::cout << "EC in OnRead" << std::endl;
             return ReportError(ec, "read"sv);
         }
         HandleRequest(std::move(request_));

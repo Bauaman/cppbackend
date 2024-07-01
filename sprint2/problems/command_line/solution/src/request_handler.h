@@ -34,7 +34,8 @@ public:
     explicit RequestHandler(net::io_context& ioc, GameServer& gs, net::strand<net::io_context::executor_type> api_strand) :
         ioc_(ioc),
         gs_(gs),
-        strand_(api_strand) {}
+        strand_(api_strand),
+        api_handler_(std::make_shared<ApiHandler>(gs)) {}
 
     RequestHandler(const RequestHandler&) = delete;
     RequestHandler& operator=(const RequestHandler&) = delete;
@@ -50,11 +51,12 @@ public:
                 auto req_ptr = std::make_shared<http::request<Body, http::basic_fields<Allocator>>>(std::move(req));
 
                 return boost::asio::dispatch(strand_, [self = shared_from_this(),
-                                                        api_handler = std::make_shared<ApiHandler<Body,Allocator,Send>>(*req_ptr, gs_, r_data), 
+                                                        req_ptr, r_data,
+                                                        //api_handler = std::make_shared<ApiHandler<Body,Allocator,Send>>(*req_ptr, gs_, r_data), 
                                                         send = std::move(send)] {
                     // Этот assert не выстрелит, так как лямбда-функция будет выполняться внутри strand
                     assert(self->strand_.running_in_this_thread());
-                    send(api_handler->HandleRequest());
+                    send(self->api_handler_->HandleRequest(*req_ptr, r_data));
                 });
                 return;
             }
@@ -104,6 +106,7 @@ private:
     net::io_context& ioc_;
     GameServer& gs_;
     net::strand<net::io_context::executor_type> strand_;
+    std::shared_ptr<ApiHandler> api_handler_;
 
 };
 
@@ -119,20 +122,20 @@ public:
         std::chrono::high_resolution_clock timer;
         auto start_time = timer.now();
 
-        LogRequest(req);
+        auto uri = LogRequest(req);
         std::string content_type = "null";
         int code_result;
 
         auto req_ptr = std::make_shared<http::request<Body, http::basic_fields<Allocator>>>(std::move(req));
 
-        decorated_(/*std::move(req)*/ std::move(*req_ptr), [s = std::move(send), &content_type, &code_result](auto&& response){
+        decorated_(std::move(*req_ptr), [s = std::move(send), &content_type, &code_result](auto&& response){
             code_result = response.result_int();
             content_type = static_cast<std::string>(response.at(http::field::content_type));
             s(response);
         });
         auto stop_time = timer.now();
         auto dtime = std::chrono::duration_cast<std::chrono::microseconds>(stop_time - start_time).count();
-        LogResponse(dtime, code_result, content_type);
+        LogResponse(dtime, code_result, content_type, uri);
         return;
     }
 
@@ -140,7 +143,7 @@ private:
     RequestHandler& decorated_;
 
     template <typename Body, typename Allocator>
-    static void LogRequest(http::request<Body, http::basic_fields<Allocator>>& req) {
+    /*static void*/std::string LogRequest(http::request<Body, http::basic_fields<Allocator>>& req) {
         std::string host = static_cast<std::string>(req.at(http::field::host));
         host = host.substr(0, host.rfind(':'));
 
@@ -149,14 +152,17 @@ private:
             {"URI", req.target()},
             {"method", req.method_string()}};
         BOOST_LOG_TRIVIAL(info) << boost::log::add_value(additional_data, obj) << "request received"sv;
+        std::string str(req.target());
+        return str;
     }
 
-    static void LogResponse(int delta, int code, std::string content) {
+    static void LogResponse(int delta, int code, std::string content, std::string uri) {
         if(content.empty()){
         content = "null";
         }
         boost::json::object obj;
         obj = {
+            {"uri", uri},
             {"response_time", delta},
             {"code", code},
             {"content_type", content}};

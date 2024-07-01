@@ -75,16 +75,16 @@ public:
         return maps_;
     }
 
-    /*const Map* */ std::optional<std::shared_ptr<Map>> FindMap(const Map::Id& id) const noexcept {
+    /*const Map* */ std::shared_ptr<Map> FindMap(const Map::Id& id) const noexcept {
         if (auto it = map_id_to_index_.find(id); it != map_id_to_index_.end()) {
             return std::make_shared<Map>(maps_.at(it->second));
         }
-        return std::nullopt;
+        return nullptr;
     }
 
     std::shared_ptr<GameSession> GetGameSession(const Map::Id& id) {
         auto map = FindMap(id);
-        if (!map) {
+        if (map == nullptr) {
             throw std::invalid_argument("Map "s + *id + " doesn't exist"s);
         }
         for (auto& session : game_sessions_) {
@@ -94,7 +94,7 @@ public:
             }
         }
 
-        auto game_session = std::make_shared<GameSession>(*map);
+        auto game_session = std::make_shared<GameSession>(map);
         //std::cout << "New session" << std::endl;
         game_sessions_.push_back(game_session);
 
