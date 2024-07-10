@@ -3,7 +3,6 @@
 namespace http_handler {
 
 RequestData RequestParser(const std::string& req_target) {
-    //std::cout << "Request Parser Run: req_target = " << req_target << std::endl;
     if (req_target.find("/api") == 0) {
         size_t pos = req_target.find("/api/v1/");
         if (pos != std::string::npos) { //проверка на правильный префикс

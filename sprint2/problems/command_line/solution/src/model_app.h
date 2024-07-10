@@ -9,7 +9,6 @@
 #include <unordered_map>
 
 #include "types.h"
-//#include "tagged.h"
 
 namespace model {
 
@@ -35,11 +34,9 @@ public:
         dog_position_(0., 0.),
         dog_speed_(0., 0.),
         dir_("U") {
-            std::cout << "Dog constr" << std::endl;
         }
 
     ~Dog() {
-        std::cout << "Dog destr" << std::endl;
     }
 
     int GetId() const {
@@ -91,7 +88,6 @@ public:
 
     void SetDefaultSpeed(double default_dog_speed) {
         default_dog_speed_ = default_dog_speed;
-        //SetSpeed();
     }
 
     const std::string& GetDogDirection() const {
@@ -130,12 +126,9 @@ public:
         session_{sess},
         player_id_(++player_id_counter_){
             SetDog(std::make_shared<Dog>(token));
-            //dog_->SetPosition(dsp);
-            std::cout << "Player constr" << std::endl;
         }
 
     ~Player() {
-        std::cout << "Player destr" << std::endl;
     }
 
     Token GetPlayerToken() const {
@@ -197,21 +190,19 @@ class PlayerList {
 public:
 
     PlayerList() {
-        std::cout << "Player list construct" << std::endl;
     }
 
     ~PlayerList() {
-        std::cout << "Player list destr" << std::endl;
     }
 
-    /*Player**/std::shared_ptr<Player> FindPlayer(const Token& token) {
+    std::shared_ptr<Player> FindPlayer(const Token& token) {
         if (players_.contains(token)) {
             return players_.at(token);
         }
         return nullptr;
     }
 
-    /*Player&*/std::shared_ptr<Player> AddPlayer(const std::string& name, std::shared_ptr<GameSession> session) {
+    std::shared_ptr<Player> AddPlayer(const std::string& name, std::shared_ptr<GameSession> session) {
         Token token = GetToken();
         auto p = players_.emplace(token, std::make_shared<Player>(token, name, session));
         if (p.second) {

@@ -1,6 +1,6 @@
 #pragma once
 #include "sdk.h"
-// boost.beast будет использовать std::string_view вместо boost::string_view
+
 #define BOOST_BEAST_USE_STD_STRING_VIEW
 
 #include <boost/asio/ip/tcp.hpp>
@@ -76,7 +76,6 @@ private:
 
 template <typename RequestHandler>
 class Session : public SessionBase, public std::enable_shared_from_this<Session<RequestHandler>> {
-	// Напишите недостающий код, используя информацию из урока
 public:
     template <typename Handler>
     Session(tcp::socket&& socket, Handler&& request_handler, const std::string root_dir) :
@@ -143,7 +142,6 @@ private:
 
 template <typename RequestHandler>
 void ServeHttp(net::io_context& ioc, const tcp::endpoint& endpoint, RequestHandler&& handler) {
-    // Напишите недостающий код, используя информацию из урока
     using MyListener = Listener<std::decay_t<RequestHandler>>;
     std::make_shared<MyListener>(ioc, endpoint, std::forward<RequestHandler>(handler))->Run();
 }

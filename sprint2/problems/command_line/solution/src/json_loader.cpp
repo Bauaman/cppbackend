@@ -106,9 +106,7 @@ void AddMapsToGame (const boost::json::value& parsed, model::Game& game) {
 void SetDogSpeedToGame(const boost::json::value& parsed, model::Game& game) {
     if (parsed.as_object().contains("defaultDogSpeed")) {
         if (parsed.as_object().at("defaultDogSpeed").is_double()) {
-            //std::cout << "IsDouble ";
             game.SetDefaultDogSpeed(parsed.as_object().at("defaultDogSpeed").as_double());
-            //std::cout << game.GetDefaultDogSpeed() << std::endl;
         }
     }
 }

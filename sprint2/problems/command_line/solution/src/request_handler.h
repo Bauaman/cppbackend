@@ -45,28 +45,29 @@ public:
         try {
             std::string req_target = auxillary::UrlDecode(std::string(req.target()));
             RequestData r_data = RequestParser(req_target);
-            //std::cout << "r_data parsed successfully: " << r_data.r_target << " " << toString(r_data.type) << std::endl;
+            auto version = req.version();
+            auto keep_alive = req.keep_alive();
             if (r_data.type != RequestType::FILE /*запрос к API*/) {
-                
-                auto req_ptr = std::make_shared<http::request<Body, http::basic_fields<Allocator>>>(std::move(req));
 
-                return boost::asio::dispatch(strand_, [self = shared_from_this(),
-                                                        req_ptr, r_data,
-                                                        //api_handler = std::make_shared<ApiHandler<Body,Allocator,Send>>(*req_ptr, gs_, r_data), 
-                                                        send = std::move(send)] {
-                    // Этот assert не выстрелит, так как лямбда-функция будет выполняться внутри strand
-                    assert(self->strand_.running_in_this_thread());
-                    send(self->api_handler_->HandleRequest(*req_ptr, r_data));
-                });
-                return;
+                auto handle = [self = shared_from_this(), send,
+                               req = std::forward<decltype(req)>(req), version, keep_alive, r_data] {
+                    try {
+                        assert(self->strand_.running_in_this_thread());
+                        return send(self->api_handler_->HandleRequest(req, r_data));
+                    } catch (...) {
+                        json::object ex_resp {{"code", "badRequest"},
+                                              {"message", "test"}};
+                        send(MakeResponse(http::status::bad_request, json::serialize(ex_resp), version, keep_alive, ContentType::JSON));
+                    }
+                };
+
+                return boost::asio::dispatch(strand_, handle);
             }
             
             return std::visit([&send](auto&& result) {
                             send(std::forward<decltype(result)>(result));
                             }, HandleFileRequest(req, r_data));
         } catch (const std::exception& ex) {
-            //std::cout << "Catched exception in RequestHandler operator ()" << std::endl;
-            //std::cout << ex.what() << std::endl;
             std::string str(ex.what());
             json::object ex_resp {{"code", "badRequest"},
                                   {"message", str}};
@@ -123,19 +124,18 @@ public:
         auto start_time = timer.now();
 
         auto uri = LogRequest(req);
-        std::string content_type = "null";
-        int code_result;
 
-        auto req_ptr = std::make_shared<http::request<Body, http::basic_fields<Allocator>>>(std::move(req));
-
-        decorated_(std::move(*req_ptr), [s = std::move(send), &content_type, &code_result](auto&& response){
-            code_result = response.result_int();
-            content_type = static_cast<std::string>(response.at(http::field::content_type));
+        decorated_(std::move(req), [s = std::move(send), start_time, uri](auto&& response){
+            std::string content_type = "null";
+            auto code_result = response.result_int();
+            if (response.find(http::field::content_type) != response.end()) {
+                content_type = std::string(response.at(http::field::content_type));
+            }
             s(response);
+            auto stop_time = std::chrono::high_resolution_clock::now();
+            auto dtime = std::chrono::duration_cast<std::chrono::microseconds>(stop_time - start_time).count();
+            LogResponse(dtime, code_result, content_type, uri);
         });
-        auto stop_time = timer.now();
-        auto dtime = std::chrono::duration_cast<std::chrono::microseconds>(stop_time - start_time).count();
-        LogResponse(dtime, code_result, content_type, uri);
         return;
     }
 
@@ -143,7 +143,7 @@ private:
     RequestHandler& decorated_;
 
     template <typename Body, typename Allocator>
-    /*static void*/std::string LogRequest(http::request<Body, http::basic_fields<Allocator>>& req) {
+    std::string LogRequest(http::request<Body, http::basic_fields<Allocator>>& req) {
         std::string host = static_cast<std::string>(req.at(http::field::host));
         host = host.substr(0, host.rfind(':'));
 

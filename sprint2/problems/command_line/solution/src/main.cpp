@@ -4,9 +4,6 @@
 #include <iostream>
 #include <thread>
 
-//#include "aux.h"
-//#include "logger.h"
-//#include "game_server.h"
 #include "request_handler.h"
 #include "ticker.h"
 #include "command_line_parser.h"
@@ -32,12 +29,7 @@ void RunWorkers(unsigned n, const Fn& fn) {
 } // namespace
 
 int main(int argc, const char* argv[]) {
-    /*
-    if (argc != 3) {
-        std::cerr << "Usage: game_server <game-config-json> <base directory name>"sv << std::endl;
-        return EXIT_FAILURE;
-    }
-    */
+
     Args command_line_args;
     try {
         if (auto args = ParseCommandLine(argc, argv)) {
@@ -55,10 +47,6 @@ int main(int argc, const char* argv[]) {
 
     try {
 
-        /*
-        fs::path config = fs::weakly_canonical(fs::path(auxillary::UrlDecode(argv[1])));
-        fs::path root = fs::weakly_canonical(fs::path(auxillary::UrlDecode(argv[2])));
-        */
         fs::path config = fs::weakly_canonical(fs::path(auxillary::UrlDecode(command_line_args.config_file_path)));
         fs::path root = fs::weakly_canonical(fs::path(auxillary::UrlDecode(command_line_args.static_root)));
 
@@ -90,7 +78,6 @@ int main(int argc, const char* argv[]) {
         signals.async_wait([&ioc, &logger](const sys::error_code ec, [[maybe_unused]] int signal_number) {
             if (!ec) {
                 ioc.stop();
-                //logger::LogExit(0);
             }
         });
 

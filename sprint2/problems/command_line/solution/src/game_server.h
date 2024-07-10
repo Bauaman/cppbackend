@@ -23,7 +23,6 @@ public:
         ioc_(ioc),
         root_dir_(root) {
             game_ = json_loader::LoadGame(config);
-            //game_.PrintMaps();
         }
 
     const fs::path& GetRootDir() const noexcept {
@@ -43,14 +42,9 @@ public:
         if (!session) {
             throw std::runtime_error("Failed to create game session...");
         }
-        //model::ParamPairDouble dog_start_position = game_.FindMap(id)->GetRandomDogPosition();
-        //std::cout << "Random dog position: " << dog_start_position.x_ << ", " << dog_start_position.y_ << std::endl;
         auto player = player_list_.AddPlayer(player_name, session);
         auto dog = player->GetDog();
-        //dog->SetDefaultSpeed(session->GetMap().GetMapDogSpeed());
         session->AddDog(dog, spawn_dog_random);
-        //std::cout << "Game dog speed " << game_.GetDefaultDogSpeed() << std::endl;
-        //std::cout << "Map dog speed " << game_.FindMap(id)->GetMapDogSpeed() << std::endl;
         return player;
     }
 
@@ -73,7 +67,6 @@ public:
     void SetGameServerTick(const double tick) {
         tick_ = tick;
         std::cout << "game server tick is set to " << tick_;
-        //UpdateGames();
     }
 
     void SetAutoTicker() {

@@ -53,9 +53,7 @@ namespace http_server {
     void SessionBase::Close() {
         try {
             stream_.socket().shutdown(tcp::socket::shutdown_send);
-            //std::cout << "Session Closed" << std::endl;
         } catch (const std::exception& ex) {
-            //std::cerr << "Error closing session: " << e.what() << std::endl;
             logger::LogError(ex);
         }
     }

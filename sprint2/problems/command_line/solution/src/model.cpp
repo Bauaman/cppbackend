@@ -10,19 +10,14 @@ double RoundToTwoDigits(double d) {
 void Map::AddRoad(const Road& road) {
     roads_.emplace_back(road);
     std::shared_ptr<Road> road_ptr = std::make_shared<Road>(roads_.back());
-    //std::cout << "road emplaced: " << road_ptr << std::endl;
     
     if (road.IsHorizontal()) {
-        //std::cout << "Adding Horizontal road " << std::endl;
         for (Coord x = std::min(road_ptr->GetStart().x, road_ptr->GetEnd().x); x <= std::max(road_ptr->GetStart().x, road_ptr->GetEnd().x); x++) {
-            //std::cout << "adding point: {" << x << ", " << road_ptr->GetStart().y << "} " << road_ptr << std::endl; 
             coord_to_road[{x, road_ptr->GetStart().y}].emplace(road_ptr);
         }
     }
     if (road.IsVertical()) {
-        //std::cout << "Adding Vertical road " << std::endl;
         for (Coord y = std::min(road_ptr->GetStart().y, road_ptr->GetEnd().y); y <= std::max(road_ptr->GetStart().y, road_ptr->GetEnd().y); y++) {
-            //std::cout << "adding point: {" << road_ptr->GetStart().x << ", " << y << "} " << road_ptr << std::endl; 
             coord_to_road[{road_ptr->GetStart().x, y}].emplace(road_ptr);
         }        
     }

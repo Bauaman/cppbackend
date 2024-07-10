@@ -21,18 +21,13 @@ boost::json::value PrepareRoadsForResponse(std::shared_ptr<model::Map> map);
 boost::json::value PrepareBuildingsForResponce(std::shared_ptr<model::Map> map);
 boost::json::value PrepareOfficesForResponce(std::shared_ptr<model::Map> map);
 
-//template <typename Body, typename Allocator, typename Send>
 class ApiHandler {
 public:
-    ApiHandler(/*const http::request<Body, http::basic_fields<Allocator>> req, */GameServer& gs/*, RequestData rd*/) :
-        //req_(req),
-        gs_(gs)
-        /*r_data_(rd)*/ {
-            std::cout << "ApiHandlerConstruct" << std::endl;
+    ApiHandler(GameServer& gs) :
+        gs_(gs) {
         }
 
     ~ApiHandler() {
-        std::cout << "ApiHandler Destruct" << std::endl;
     }
 
     template <typename Body, typename Allocator>
@@ -90,8 +85,6 @@ public:
                 for (const auto& key : keys_in_map) {
                     if (key == "id") {
                         resp_message["id"] = *map->GetId();
-                    //} else if (key == "dogSpeed") {
-                    //    resp_message["dogSpeed"] = map->GetMapDogSpeed();
                     } else if (key == "name") {
                         resp_message["name"] = map->GetName();
                     } else if (key == "roads") {
@@ -218,7 +211,7 @@ public:
         if (req_.method() != http::verb::post) {
             return MakeResponse(http::status::method_not_allowed, Errors::INVALID_METHOD, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv, "POST"sv);
         }
-        return ExecuteAuthorized([this, &req_](/*const model::Player&*/std::shared_ptr<const model::Player> player) {
+        return ExecuteAuthorized([this, &req_](std::shared_ptr<const model::Player> player) {
             try {
                 json::value parsed_req = json::parse(req_.body());
                 player->GetDog()->SetDogDirection(static_cast<std::string>(parsed_req.as_object().at("move").as_string()));
@@ -232,9 +225,7 @@ public:
 
 
 private:
-    //const http::request<Body, http::basic_fields<Allocator>> req_;
     GameServer& gs_;
-    /*RequestData r_data_;*/
 
     template <typename Body, typename Allocator>
     std::optional<model::Token> TryExtractToken(const http::request<Body, http::basic_fields<Allocator>> req_) {

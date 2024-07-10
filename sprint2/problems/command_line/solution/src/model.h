@@ -2,7 +2,6 @@
 
 #include "aux.h"
 #include "types.h"
-//#include "tagged.h"
 
 #include <algorithm>
 #include <cassert>
@@ -20,28 +19,6 @@
 namespace model {
 
 using namespace std::literals;
-/*
-using Dimention = int;
-using Coord = Dimention;
-
-
-struct Point {
-    Coord x, y;
-};
-
-struct Size {
-    Dimention width, height;
-};
-
-struct Rectangle {
-    Point position;
-    Size size;
-};
-
-struct Offset {
-    Dimention dx, dy;
-};
-*/
 class Element {
 public:
     void SetKeySequence(std::string str) {
@@ -195,9 +172,7 @@ public:
         return offices_;
     }
 
-    void AddRoad(const Road& road);/* {
-        roads_.emplace_back(road);
-    }*/
+    void AddRoad(const Road& road);
 
     void AddBuilding(const Building& building) {
         buildings_.emplace_back(building);
@@ -210,7 +185,6 @@ public:
     ParamPairDouble GetStartPosition(bool random) const;
 
     void SetMapDogSpeed(double ds) {
-        //std::cout << "Map id: " << *id_ << " Setting map dog speed " << ds << std::endl;
         map_dog_speed_ = ds;
     }
 
