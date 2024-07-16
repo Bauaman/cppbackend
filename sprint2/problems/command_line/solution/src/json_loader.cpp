@@ -16,7 +16,6 @@ std::string LoadJsonFileAsString(const std::filesystem::path& json_path) {
     jsonfile.open(filepath);
     
     if (!jsonfile.is_open()) {
-        // std::string error_message = "Failed to open file: "s + std::string(json_path);
         throw std::runtime_error("Failed to open file");
     }
 
@@ -121,20 +120,15 @@ model::Game LoadGame(const std::filesystem::path& json_path) {
     // Загрузить содержимое файла json_path, например, в виде строки
     // Распарсить строку как JSON, используя boost::json::parse
     // Загрузить модель игры из файла
-    // try {
-        std::string json_as_string = LoadJsonFileAsString(json_path);
-        boost::json::value parsed_json = boost::json::parse(json_as_string);
+    std::string json_as_string = LoadJsonFileAsString(json_path);
+    boost::json::value parsed_json = boost::json::parse(json_as_string);
 
-        model::Game game;
+    model::Game game;
 
-        SetDogSpeedToGame(parsed_json.as_object(), game);
-        AddMapsToGame(parsed_json.as_object().at("maps").as_array(), game);
-        
-        return game;
-
-    // } catch (const std::exception& e) {
-    //     throw e;
-    // }
+    SetDogSpeedToGame(parsed_json.as_object(), game);
+    AddMapsToGame(parsed_json.as_object().at("maps").as_array(), game);
+    
+    return game;
 }
 
 }  // namespace json_loader

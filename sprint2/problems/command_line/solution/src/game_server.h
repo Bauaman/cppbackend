@@ -37,7 +37,7 @@ public:
         return game_.GetMaps();
     }
 
-    std::shared_ptr<model::Player> JoinGame(model::Map::Id id, const std::string& player_name); //{
+    std::shared_ptr<model::Player> JoinGame(model::Map::Id id, const std::string& player_name);
 
     std::shared_ptr<const model::Player> FindPlayer(const model::Token& token) {
         return player_list_.FindPlayer(token);
