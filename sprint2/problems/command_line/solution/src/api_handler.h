@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cctype>
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
@@ -23,7 +24,7 @@ boost::json::value PrepareOfficesForResponce(std::shared_ptr<model::Map> map);
 
 class ApiHandler {
 public:
-    ApiHandler(GameServer& gs) :
+    explicit ApiHandler(GameServer& gs) :
         gs_(gs) {
         }
 
@@ -31,7 +32,7 @@ public:
     }
 
     template <typename Body, typename Allocator>
-    http::response<http::string_body> HandleRequest(const http::request<Body, http::basic_fields<Allocator>> req_, RequestData r_data_) {
+    http::response<http::string_body> HandleRequest(const http::request<Body, http::basic_fields<Allocator>>& req_, const RequestData& r_data_) {
         try {
             if (r_data_.type == RequestType::API) {
                 return HandleMapRequest(req_, r_data_);
@@ -48,25 +49,41 @@ public:
                 } else if (r_data_.r_target == "tick" && !gs_.IsAutoTicker()) {
                     return HandleTickRequest(req_);
                 } else {
-                    return MakeResponse(http::status::bad_request, Errors::BAD_REQ, req_.version(), req_.keep_alive(), ContentType::JSON);
+                    return MakeResponse(http::status::bad_request, 
+                                        Errors::BAD_REQ, 
+                                        req_.version(), req_.keep_alive(), 
+                                        ContentType::JSON);
                 }
             } 
         } catch (const std::exception& ex) {
-            return MakeResponse(http::status::bad_request, Errors::BAD_REQ, req_.version(), req_.keep_alive(), ContentType::JSON);
+            return MakeResponse(http::status::bad_request, 
+                                Errors::BAD_REQ, 
+                                req_.version(), req_.keep_alive(), 
+                                ContentType::JSON);
         }
-        return MakeResponse(http::status::bad_request, Errors::BAD_REQ, req_.version(), req_.keep_alive(), ContentType::JSON);
+        return MakeResponse(http::status::bad_request, 
+                            Errors::BAD_REQ, 
+                            req_.version(), req_.keep_alive(), 
+                            ContentType::JSON);
     }
 
 // Methods, no authorization required ->
     template <typename Body, typename Allocator>
-    http::response<http::string_body> HandleMapRequest(const http::request<Body, http::basic_fields<Allocator>> req_, RequestData r_data_) {
+    http::response<http::string_body> HandleMapRequest(const http::request<Body, http::basic_fields<Allocator>>& req_, const RequestData& r_data_) {
         json::value message;
         if (req_.method() != http::verb::get) {
-            return MakeResponse(http::status::method_not_allowed, Errors::GET_INVALID, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv, "GET"sv);
+            return MakeResponse(http::status::method_not_allowed, 
+                                Errors::GET_INVALID, req_.version(), req_.keep_alive(), 
+                                ContentType::JSON, 
+                                "no-cache"sv, "GET"sv);
         }
         
         if (r_data_.r_target.empty()) {
-            return MakeResponse(http::status::bad_request, Errors::BAD_REQ, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv);
+            return MakeResponse(http::status::bad_request, 
+                                Errors::BAD_REQ, 
+                                req_.version(), req_.keep_alive(), 
+                                ContentType::JSON, 
+                                "no-cache"sv);
         }
         if (r_data_.r_target == "maps") {
             json::array array;
@@ -75,7 +92,10 @@ public:
                 array.push_back(val);
             }
             message = array;
-            return MakeResponse(http::status::ok, json::serialize(message), req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv); 
+            return MakeResponse(http::status::ok, 
+                                json::serialize(message), 
+                                req_.version(), req_.keep_alive(), 
+                                ContentType::JSON, "no-cache"sv); 
         } else {
             json::object resp_message;
             model::Map::Id id_{r_data_.r_target};
@@ -99,31 +119,51 @@ public:
                     }
                 }
                 message = resp_message;
-                return MakeResponse(http::status::ok, json::serialize(message), req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv);
+                return MakeResponse(http::status::ok, 
+                                    json::serialize(message), 
+                                    req_.version(), req_.keep_alive(), 
+                                    ContentType::JSON, 
+                                    "no-cache"sv);
                 
             } else {
-                return MakeResponse(http::status::not_found, Errors::MAP_NOT_FOUND, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv);
+                return MakeResponse(http::status::not_found, 
+                                    Errors::MAP_NOT_FOUND, 
+                                    req_.version(), req_.keep_alive(), 
+                                    ContentType::JSON, 
+                                    "no-cache"sv);
                 
             }
         }
     }
 
     template <typename Body, typename Allocator>
-    http::response<http::string_body> HandlePlayerJoinRequest(const http::request<Body, http::basic_fields<Allocator>> req_) {
+    http::response<http::string_body> HandlePlayerJoinRequest(const http::request<Body, http::basic_fields<Allocator>>& req_) {
         if (req_.method() != http::verb::post) {
-            return MakeResponse(http::status::method_not_allowed, Errors::POST_INVALID, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv, "POST"sv);
+            return MakeResponse(http::status::method_not_allowed, 
+                                Errors::POST_INVALID, 
+                                req_.version(), req_.keep_alive(), 
+                                ContentType::JSON, 
+                                "no-cache"sv, "POST"sv);
         }
         std::string user_name;
         std::string map_id;
         try {
             boost::json::value parsed_req = boost::json::parse(req_.body());
             if (parsed_req.as_object().find("userName") == parsed_req.as_object().end() || parsed_req.as_object().at("userName").as_string().empty()) {
-                return MakeResponse(http::status::bad_request, Errors::USERNAME_EMPTY, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv);
+                return MakeResponse(http::status::bad_request, 
+                                    Errors::USERNAME_EMPTY, 
+                                    req_.version(), req_.keep_alive(), 
+                                    ContentType::JSON, 
+                                    "no-cache"sv);
             }
             user_name = parsed_req.as_object().at("userName").as_string();
             map_id = parsed_req.as_object().at("mapId").as_string();
         } catch (const std::exception& ex) {
-            return MakeResponse(http::status::bad_request, Errors::PARSING_ERROR, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv);
+            return MakeResponse(http::status::bad_request, 
+                                Errors::PARSING_ERROR, 
+                                req_.version(), req_.keep_alive(), 
+                                ContentType::JSON, 
+                                "no-cache"sv);
         }
         model::Map::Id mapId(map_id);
         auto map = gs_.FindMap(mapId);
@@ -136,25 +176,44 @@ public:
             resp = {{"authToken", *player->GetPlayerToken()},
                     {"playerId", player->GetId()}};
         } catch (const std::exception& ex) {
-            return MakeResponse(http::status::internal_server_error, "Join game failed: "s + ex.what(), req_.version(), req_.keep_alive(), ContentType::HTML);
+            return MakeResponse(http::status::internal_server_error, 
+                                "Join game failed: "s + ex.what(), 
+                                req_.version(), req_.keep_alive(), 
+                                ContentType::HTML);
         }
-        return MakeResponse(http::status::ok, boost::json::serialize(resp), req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv);
+        return MakeResponse(http::status::ok, 
+                            boost::json::serialize(resp), 
+                            req_.version(), req_.keep_alive(), 
+                            ContentType::JSON, 
+                            "no-cache"sv);
     }
 
     template <typename Body, typename Allocator>
-    http::response<http::string_body> HandleTickRequest(const http::request<Body, http::basic_fields<Allocator>> req_) {
+    http::response<http::string_body> HandleTickRequest(const http::request<Body, http::basic_fields<Allocator>>& req_) {
         if (req_.method() != http::verb::post) {
-            return MakeResponse(http::status::method_not_allowed, Errors::INVALID_METHOD, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv, "POST"sv);            
+            return MakeResponse(http::status::method_not_allowed, 
+                                Errors::INVALID_METHOD, 
+                                req_.version(), req_.keep_alive(), 
+                                ContentType::JSON, 
+                                "no-cache"sv, "POST"sv);            
         }
         double delta_t;
         try {
             json::value parsed_req = json::parse(req_.body());
             if (parsed_req.as_object().find("timeDelta") == parsed_req.as_object().end()) {
-                return MakeResponse(http::status::bad_request, Errors::BAD_REQ, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv);
+                return MakeResponse(http::status::bad_request, 
+                                    Errors::BAD_REQ, 
+                                    req_.version(), req_.keep_alive(), 
+                                    ContentType::JSON, 
+                                    "no-cache"sv);
             }
             delta_t = parsed_req.as_object().at("timeDelta").as_int64() / 1000.;
         } catch (const std::exception& ex) {
-            return MakeResponse(http::status::bad_request, Errors::PARSING_ERROR, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv);
+            return MakeResponse(http::status::bad_request, 
+                                Errors::PARSING_ERROR, 
+                                req_.version(), req_.keep_alive(), 
+                                ContentType::JSON, 
+                                "no-cache"sv);
         }
         json::object resp;
         try {
@@ -162,15 +221,23 @@ public:
         } catch (const std::exception& ex) {
             throw;
         }
-        return MakeResponse(http::status::ok, boost::json::serialize(resp), req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv);
+        return MakeResponse(http::status::ok, 
+                            boost::json::serialize(resp), 
+                            req_.version(), req_.keep_alive(), 
+                            ContentType::JSON, 
+                            "no-cache"sv);
     }
 
 // Methods, authorization required ->
 
     template <typename Body, typename Allocator>
-    http::response<http::string_body> HandlePlayersListRequest(const http::request<Body, http::basic_fields<Allocator>> req_) {
+    http::response<http::string_body> HandlePlayersListRequest(const http::request<Body, http::basic_fields<Allocator>>& req_) {
         if (req_.method() != http::verb::get && req_.method() != http::verb::head) {
-            return MakeResponse(http::status::method_not_allowed, Errors::INVALID_METHOD, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv, "GET, HEAD"sv);            
+            return MakeResponse(http::status::method_not_allowed, 
+                                Errors::INVALID_METHOD, 
+                                req_.version(), req_.keep_alive(), 
+                                ContentType::JSON, 
+                                "no-cache"sv, "GET, HEAD"sv);            
         } 
         boost::json::object resp;
         return ExecuteAuthorized([this, &resp, &req_](std::shared_ptr<const model::Player> player) {
@@ -180,14 +247,22 @@ public:
                     resp[std::to_string(plr->GetId())] = boost::json::object{{"name", plr->GetName()}};
                 }
             }
-            return MakeResponse(http::status::ok, boost::json::serialize(resp), req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv);
+            return MakeResponse(http::status::ok, 
+                                boost::json::serialize(resp), 
+                                req_.version(), req_.keep_alive(), 
+                                ContentType::JSON, 
+                                "no-cache"sv);
         }, req_);
     }
 
     template <typename Body, typename Allocator>
-    http::response<http::string_body> HandleStateRequest(const http::request<Body, http::basic_fields<Allocator>> req_) {
+    http::response<http::string_body> HandleStateRequest(const http::request<Body, http::basic_fields<Allocator>>& req_) {
         if (req_.method() != http::verb::get && req_.method() != http::verb::head) {
-            return MakeResponse(http::status::method_not_allowed, Errors::INVALID_METHOD, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv, "GET, HEAD"sv);
+            return MakeResponse(http::status::method_not_allowed, 
+                                Errors::INVALID_METHOD, 
+                                req_.version(), req_.keep_alive(), 
+                                ContentType::JSON, 
+                                "no-cache"sv, "GET, HEAD"sv);
         }
         boost::json::object resp;
         return ExecuteAuthorized([this, &resp, &req_](std::shared_ptr<const model::Player> player) {
@@ -196,39 +271,56 @@ public:
                 if (pl.second->GetPlayersSession() == player->GetPlayersSession()) {
                     resp[std::to_string(pl.second->GetId())] = {
                         {"dir", pl.second->GetDog()->GetDogDirection()},
-                        {"pos", {(double)pl.second->GetDog()->GetDogPosition().x_, (double)pl.second->GetDog()->GetDogPosition().y_}},
-                        {"speed", {(double)pl.second->GetDog()->GetDogSpeed().x_, (double)pl.second->GetDog()->GetDogSpeed().y_}}
+                        {"pos", {static_cast<double>(pl.second->GetDog()->GetDogPosition().x_), 
+                                 static_cast<double>(pl.second->GetDog()->GetDogPosition().y_)}},
+                        {"speed", {static_cast<double>(pl.second->GetDog()->GetDogSpeed().x_),
+                                   static_cast<double>(pl.second->GetDog()->GetDogSpeed().y_)}}
                     };
                 }
             }
             boost::json::object resp_message {{"players", resp}};
-            return MakeResponse(http::status::ok, json::serialize(resp_message), req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv);
+            return MakeResponse(http::status::ok, 
+                                json::serialize(resp_message), 
+                                req_.version(), req_.keep_alive(), 
+                                ContentType::JSON, 
+                                "no-cache"sv);
         }, req_); 
     }
 
     template <typename Body, typename Allocator>
-    http::response<http::string_body> HandleActionRequest(const http::request<Body, http::basic_fields<Allocator>> req_) {
+    http::response<http::string_body> HandleActionRequest(const http::request<Body, http::basic_fields<Allocator>>& req_) {
         if (req_.method() != http::verb::post) {
-            return MakeResponse(http::status::method_not_allowed, Errors::INVALID_METHOD, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv, "POST"sv);
+            return MakeResponse(http::status::method_not_allowed, 
+                                Errors::INVALID_METHOD, 
+                                req_.version(), req_.keep_alive(), 
+                                ContentType::JSON, 
+                                "no-cache"sv, "POST"sv);
         }
         return ExecuteAuthorized([this, &req_](std::shared_ptr<const model::Player> player) {
             try {
                 json::value parsed_req = json::parse(req_.body());
                 player->GetDog()->SetDogDirection(static_cast<std::string>(parsed_req.as_object().at("move").as_string()));
             } catch (const std::exception& ex) {
-                return MakeResponse(http::status::bad_request, Errors::ACTION_PARSING_ERROR, req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv);
+                return MakeResponse(http::status::bad_request, 
+                                    Errors::ACTION_PARSING_ERROR, 
+                                    req_.version(), req_.keep_alive(), 
+                                    ContentType::JSON, 
+                                    "no-cache"sv);
             }
             json::object resp;
-            return MakeResponse(http::status::ok, json::serialize(resp), req_.version(), req_.keep_alive(), ContentType::JSON, "no-cache"sv);
+            return MakeResponse(http::status::ok, 
+                                json::serialize(resp), 
+                                req_.version(), req_.keep_alive(), 
+                                ContentType::JSON, 
+                                "no-cache"sv);
         }, req_); 
     }
-
 
 private:
     GameServer& gs_;
 
     template <typename Body, typename Allocator>
-    std::optional<model::Token> TryExtractToken(const http::request<Body, http::basic_fields<Allocator>> req_) {
+    std::optional<model::Token> TryExtractToken(const http::request<Body, http::basic_fields<Allocator>>& req_) {
         std::string authorization;
         if (req_.count(http::field::authorization)) {
             authorization = req_.at(http::field::authorization);
@@ -248,26 +340,37 @@ private:
         if (authorization.size() != 32) {
             return std::nullopt;
         }
-        for (auto c : authorization) {
-            if (!isxdigit(c)) {
-                return std::nullopt;
-            }
+        // for (auto c : authorization) {
+        //     if (!isxdigit(c)) {
+        //         return std::nullopt;
+        //     }
+        // }
+        if (std::any_of(authorization.begin(), authorization.end(), [](auto c){return !isxdigit(c);})) {
+            return std::nullopt;
         }
         return model::Token(authorization);
     }
 
     template <typename Fn, typename Body, typename Allocator>
-    http::response<http::string_body> ExecuteAuthorized(Fn&& action, const http::request<Body, http::basic_fields<Allocator>> req_) {
+    http::response<http::string_body> ExecuteAuthorized(Fn&& action, const http::request<Body, http::basic_fields<Allocator>>& req_) {
         bool keep_alive = req_.keep_alive();
         unsigned version = req_.version(); 
         if (auto token = this->TryExtractToken(req_)) {
             std::shared_ptr<const model::Player> pl = gs_.FindPlayer(*token);
             if (pl == nullptr) {
-                return MakeResponse(http::status::unauthorized, Errors::UNKNOWN_TOKEN, version, keep_alive, ContentType::JSON, "no-cache"sv);
+                return MakeResponse(http::status::unauthorized, 
+                                    Errors::UNKNOWN_TOKEN, 
+                                    version, keep_alive, 
+                                    ContentType::JSON, 
+                                    "no-cache"sv);
             }
             return action(pl);
         } else {
-            return MakeResponse(http::status::unauthorized, Errors::INVALID_TOKEN, version, keep_alive, ContentType::JSON, "no-cache"sv);
+            return MakeResponse(http::status::unauthorized, 
+                                Errors::INVALID_TOKEN, 
+                                version, keep_alive, 
+                                ContentType::JSON, 
+                                "no-cache"sv);
         }
     }
 

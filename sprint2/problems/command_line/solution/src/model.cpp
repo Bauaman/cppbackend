@@ -4,7 +4,7 @@ namespace model {
 using namespace std::literals;
 
 double RoundToTwoDigits(double d) {
-    return ((int)(d * 100 + 0.5) / 100.0);
+    return (static_cast<int>(d * 100 + 0.5) / 100.0);
 }
 
 void Map::AddRoad(const Road& road) {
@@ -102,5 +102,98 @@ void Map::PrintCoordToRoad() const {
         }
     }
 }
+
+void Element::SetKeySequence(std::string str) {
+    keys_.push_back(str);
+}
+
+std::vector<std::string> Element::GetKeys() const {
+    return keys_;
+}
+
+bool Road::IsHorizontal() const noexcept {
+    return start_.y == end_.y;
+}
+
+bool Road::IsVertical() const noexcept {
+    return start_.x == end_.x;
+}
+
+Point Road::GetStart() const noexcept {
+    return start_;
+}
+
+Point Road::GetEnd() const noexcept {
+    return end_;
+}
+
+bool Road::PointIsOnRoad(ParamPairDouble& p) {
+    return ((p.x_ >= road_area_.left_bottom.x_ && p.x_ <= road_area_.right_top.x_) && 
+            (p.y_ >= road_area_.left_bottom.y_ && p.y_ <= road_area_.right_top.y_));
+}
+
+RoadArea Road::GetRoadArea() const {
+    return road_area_;
+}
+
+void Road::SetRoadArea() {
+    if (this->IsHorizontal()) {
+        road_area_.left_bottom = {std::min(start_.x, end_.x) - 0.4, start_.y - 0.4};
+        road_area_.right_top = {std::max(start_.x, end_.x) + 0.4, start_.y + 0.4};
+    }
+    if (this->IsVertical()) {
+        road_area_.left_bottom = {start_.x - 0.4, std::min(start_.y, end_.y) - 0.4};
+        road_area_.right_top = {start_.x + 0.4, std::max(start_.y, end_.y) + 0.4};
+    }
+}
+
+const Rectangle& Building::GetBounds() const noexcept {
+    return bounds_;
+}
+
+const Office::Id& Office::GetId() const noexcept {
+    return id_;
+}
+
+Point Office::GetPosition() const noexcept {
+    return position_;
+}
+
+Offset Office::GetOffset() const noexcept {
+    return offset_;
+}
+
+const Map::Id& Map::GetId() const noexcept {
+    return id_;
+}
+
+const std::string& Map::GetName() const noexcept {
+    return name_;
+}
+
+const Map::Buildings& Map::GetBuildings() const noexcept {
+    return buildings_;
+}
+
+const Map::Roads& Map::GetRoads() const noexcept {
+    return roads_;
+}
+
+const Map::Offices& Map::GetOffices() const noexcept {
+    return offices_;
+}
+
+void Map::AddBuilding(const Building& building) {
+    buildings_.emplace_back(building);
+}
+
+void Map::SetMapDogSpeed(double ds) {
+    map_dog_speed_ = ds;
+}
+
+double Map::GetMapDogSpeed() const {
+    return map_dog_speed_;
+}
+
 
 }

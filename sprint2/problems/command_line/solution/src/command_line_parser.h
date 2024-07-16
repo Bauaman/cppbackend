@@ -1,3 +1,5 @@
+#pragma once
+
 #include <boost/program_options.hpp>
 
 #include <fstream>
@@ -37,7 +39,10 @@ struct Args {
     if (vm.contains("config-file") && vm.contains("www-root")) {
         return args;
     } else {
-        throw std::runtime_error("Usage: game_server --tick-period[int, optional] --config-file <game-config-json> --www-root <dir-to-content> --randomize-spawn-points[bool, optional]");
+        throw std::runtime_error(R"(Usage: game_server --tick-period[int, optional] 
+                                 --config-file <game-config-json> 
+                                 --www-root <dir-to-content> 
+                                 --randomize-spawn-points[bool, optional])");
     }
     return std::nullopt;
 }

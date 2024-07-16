@@ -38,11 +38,17 @@ std::string UrlDecode(const std::string& str) {
     char current;
     while (encoded >> current) {
         if (current == '%') {
-            int hexCode;
-            if (!(encoded >> std::hex >> hexCode)) {
-                decoded << '%';
-            } else {
+            std::string hexCodeString;
+            for (int i = 0; i < 2 && encoded >> current; ++i) {
+                hexCodeString += current;
+            }
+            if (hexCodeString.size() == 2) {
+                int hexCode;
+                std::istringstream hexStream(hexCodeString);
+                hexStream >> std::hex >> hexCode;
                 decoded << static_cast<char>(hexCode);
+            } else {
+                decoded << '%' << hexCodeString;
             }
         } else if (current == '+') {
             decoded << ' ';

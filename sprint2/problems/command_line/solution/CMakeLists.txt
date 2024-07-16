@@ -40,6 +40,7 @@ add_executable(game_server
 	src/model.h
 	src/tagged.h
 	src/command_line_parser.h
+	src/ticker.cpp
 	src/ticker.h
 	src/json_loader.cpp
 	src/json_loader.h
@@ -47,6 +48,7 @@ add_executable(game_server
 	src/request_handler.h
 	src/api_handler.cpp
 	src/api_handler.h
+	src/game_server.cpp
 	src/game_server.h
 	src/response_maker.cpp
 	src/response_maker.h

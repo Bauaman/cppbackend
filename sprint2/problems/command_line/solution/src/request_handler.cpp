@@ -3,14 +3,12 @@
 namespace http_handler {
 
 RequestData RequestParser(const std::string& req_target) {
-    if (req_target.find("/api") == 0) {
-        size_t pos = req_target.find("/api/v1/");
-        if (pos != std::string::npos) { //проверка на правильный префикс
-            std::string req_ = req_target.substr(pos + 8);
+    if (req_target.starts_with("/api")) {
+        if (req_target.starts_with("/api/v1/")) {
+            std::string req_ = req_target.substr(8);
             size_t next_slash_pos = req_.find('/');
-
             if (next_slash_pos != req_.length() && next_slash_pos != std::string::npos) {
-                if (req_.find("maps/") == 0) {
+                if (req_.starts_with("maps/")) {
                     req_ = req_.substr(next_slash_pos+1);
                     if (req_.find('/') == std::string::npos) {
                         return {RequestType::API, std::string(req_)};
@@ -18,11 +16,11 @@ RequestData RequestParser(const std::string& req_target) {
                         throw std::logic_error("Invalid request (/api/v1/maps/id/?)"s);
                     }
                 }
-                if (req_.find("game/") == 0) {
+                if (req_.starts_with("game/")) {
                     req_ = req_.substr(next_slash_pos+1); 
                     if (req_.find('/') == std::string::npos) {
                         return {RequestType::PLAYER, std::string(req_)};
-                    } else if (req_.find("player/") == 0) {
+                    } else if (req_.starts_with("player/")) {
                         next_slash_pos = req_.find('/');
                         req_ = req_.substr(next_slash_pos+1);
                         return {RequestType::PLAYER, std::string(req_)};

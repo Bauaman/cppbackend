@@ -167,7 +167,7 @@ private:
             {"code", code},
             {"content_type", content}};
         BOOST_LOG_TRIVIAL(info) << boost::log::add_value(additional_data, obj) << "response sent"sv;
-  }
+    }
 };
 
 }

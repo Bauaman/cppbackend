@@ -21,13 +21,9 @@ namespace model {
 using namespace std::literals;
 class Element {
 public:
-    void SetKeySequence(std::string str) {
-        keys_.push_back(str);
-    }
+    void SetKeySequence(std::string str);
+    std::vector<std::string> GetKeys() const;
 
-    std::vector<std::string> GetKeys() const {
-        return keys_;
-    }
 private:
     std::vector<std::string> keys_;
 };
@@ -57,48 +53,19 @@ public:
             SetRoadArea();
     }
 
-    bool IsHorizontal() const noexcept {
-        return start_.y == end_.y;
-    }
-
-    bool IsVertical() const noexcept {
-        return start_.x == end_.x;
-    }
-
-    Point GetStart() const noexcept {
-        return start_;
-    }
-
-    Point GetEnd() const noexcept {
-        return end_;
-    }
-
-    bool PointIsOnRoad(ParamPairDouble& p) {
-        return ((p.x_ >= road_area_.left_bottom.x_ && p.x_ <= road_area_.right_top.x_) && 
-                (p.y_ >= road_area_.left_bottom.y_ && p.y_ <= road_area_.right_top.y_));
-
-    }
-
-    RoadArea GetRoadArea() const {
-        return road_area_;
-    }
+    bool IsHorizontal() const noexcept;
+    bool IsVertical() const noexcept;
+    Point GetStart() const noexcept;
+    Point GetEnd() const noexcept;
+    bool PointIsOnRoad(ParamPairDouble& p);
+    RoadArea GetRoadArea() const;
 
 private:
     Point start_;
     Point end_;
 
     RoadArea road_area_;
-
-    void SetRoadArea() {
-        if (this->IsHorizontal()) {
-            road_area_.left_bottom = {std::min(start_.x, end_.x) - 0.4, start_.y - 0.4};
-            road_area_.right_top = {std::max(start_.x, end_.x) + 0.4, start_.y + 0.4};
-        }
-        if (this->IsVertical()) {
-            road_area_.left_bottom = {start_.x - 0.4, std::min(start_.y, end_.y) - 0.4};
-            road_area_.right_top = {start_.x + 0.4, std::max(start_.y, end_.y) + 0.4};
-        }
-    }
+    void SetRoadArea();
 };
 
 class Building : public Element {
@@ -106,9 +73,7 @@ public:
     explicit Building(Rectangle bounds) noexcept :
         bounds_{bounds} {}
 
-    const Rectangle& GetBounds() const noexcept {
-        return bounds_;
-    }
+    const Rectangle& GetBounds() const noexcept;
 
 private:
     Rectangle bounds_;
@@ -122,17 +87,9 @@ public:
         position_{pos},
         offset_{offset} {}
 
-    const Id& GetId() const noexcept {
-        return id_;
-    }
-
-    Point GetPosition() const noexcept {
-        return position_;
-    }
-
-    Offset GetOffset() const noexcept {
-        return offset_;
-    }
+    const Id& GetId() const noexcept;
+    Point GetPosition() const noexcept;
+    Offset GetOffset() const noexcept;
 
 private:
     Id id_;
@@ -152,48 +109,19 @@ public:
         id_(std::move(id)),
         name_(std::move(name)) {}
 
-    const Id& GetId() const noexcept {
-        return id_;
-    }
-
-    const std::string& GetName() const noexcept {
-        return name_;
-    }
-
-    const Buildings& GetBuildings() const noexcept {
-        return buildings_;
-    }
-
-    const Roads& GetRoads() const noexcept {
-        return roads_;
-    }
-
-    const Offices& GetOffices() const noexcept {
-        return offices_;
-    }
-
+    const Id& GetId() const noexcept;
+    const std::string& GetName() const noexcept;
+    const Buildings& GetBuildings() const noexcept;
+    const Roads& GetRoads() const noexcept;
+    const Offices& GetOffices() const noexcept;
     void AddRoad(const Road& road);
-
-    void AddBuilding(const Building& building) {
-        buildings_.emplace_back(building);
-    }
-
+    void AddBuilding(const Building& building);
     void AddOffice(Office office);
-
     ParamPairDouble GetRandomDogPosition() const;
-
     ParamPairDouble GetStartPosition(bool random) const;
-
-    void SetMapDogSpeed(double ds) {
-        map_dog_speed_ = ds;
-    }
-
-    double GetMapDogSpeed() const {
-        return map_dog_speed_;
-    }
-
+    void SetMapDogSpeed(double ds);
+    double GetMapDogSpeed() const;
     std::set<std::shared_ptr<Road>> GetRoadsByCoords(Point p) const;
-
     void PrintCoordToRoad() const;
 
 private:

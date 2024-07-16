@@ -38,7 +38,7 @@ void LogExit(const int code, const std::exception* ex) {
     BOOST_LOG_TRIVIAL(info) << logging::add_value(additional_data, add_data) << "server exited";
 }
 
-void LogMessageInfo (const boost::json::value& add_data, const std::string message) {
+void LogMessageInfo (const boost::json::value& add_data, const std::string& message) {
     BOOST_LOG_TRIVIAL(info) << logging::add_value(additional_data, add_data) << message;
 }
 

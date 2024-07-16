@@ -21,8 +21,8 @@ class GameServer {
 public:
     GameServer(net::io_context& ioc, fs::path config, fs::path root) :
         ioc_(ioc),
-        root_dir_(root) {
-            game_ = json_loader::LoadGame(config);
+        root_dir_(root),
+        game_{json_loader::LoadGame(config)} {
         }
 
     const fs::path& GetRootDir() const noexcept {
@@ -37,16 +37,7 @@ public:
         return game_.GetMaps();
     }
 
-    std::shared_ptr<model::Player> JoinGame(model::Map::Id id, const std::string& player_name) {
-        auto session = game_.GetGameSession(id);
-        if (!session) {
-            throw std::runtime_error("Failed to create game session...");
-        }
-        auto player = player_list_.AddPlayer(player_name, session);
-        auto dog = player->GetDog();
-        session->AddDog(dog, spawn_dog_random);
-        return player;
-    }
+    std::shared_ptr<model::Player> JoinGame(model::Map::Id id, const std::string& player_name); //{
 
     std::shared_ptr<const model::Player> FindPlayer(const model::Token& token) {
         return player_list_.FindPlayer(token);

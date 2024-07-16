@@ -63,4 +63,97 @@ void Game::AddMap(Map map) {
     }
 }
 
+std::shared_ptr<Map> GameSession::GetMap() const {
+    return map_;
+}
+
+void GameSession::AddDog(std::shared_ptr<Dog> dog, bool random_position) {
+    dog->SetPosition(map_->GetStartPosition(random_position));
+    dog->SetDefaultSpeed(map_->GetMapDogSpeed());
+    dogs_.emplace_back(dog);
+}
+
+const std::vector<std::shared_ptr<Dog>> GameSession::GetDogs() {
+    std::vector<std::shared_ptr<Dog>> result;
+    result.reserve(dogs_.size());
+
+    auto iter = dogs_.begin();
+    while (iter != dogs_.end()) {
+        if (iter->expired()) {
+            iter = dogs_.erase(iter);
+        } else {
+            result.push_back(iter->lock());
+            ++iter;
+        }
+    }
+    return result;
+}
+
+const std::shared_ptr<Dog> GameSession::GetDog(const Token& token) const {
+    for (const auto& weak_dog : dogs_) {
+        if (auto dog = weak_dog.lock()) {
+            if (dog->GetToken() == token) {
+                return dog;
+            }
+        }
+    }
+    return nullptr;
+}
+
+const Game::Maps& Game::GetMaps() const noexcept {
+    return maps_;
+}
+
+std::shared_ptr<Map> Game::FindMap(const Map::Id& id) const noexcept {
+    if (auto it = map_id_to_index_.find(id); it != map_id_to_index_.end()) {
+        return std::make_shared<Map>(maps_.at(it->second));
+    }
+    return nullptr;
+}
+
+std::shared_ptr<GameSession> Game::GetGameSession(const Map::Id& id) {
+    auto map = FindMap(id);
+    if (map == nullptr) {
+        throw std::invalid_argument("Map "s + *id + " doesn't exist"s);
+    }
+
+    auto it = std::find_if(game_sessions_.begin(), game_sessions_.end(),
+                            [&id](const std::shared_ptr<GameSession>& session) {
+                                return session->GetMap()->GetId() == id;
+                            });
+    
+    if (it != game_sessions_.end()) {
+        return *it;
+    }
+
+    auto game_session = std::make_shared<GameSession>(map);
+    game_sessions_.push_back(game_session);
+
+    return game_session;
+}
+
+void Game::SetDefaultDogSpeed(double speed) {
+    default_dog_speed_ *= speed;
+}
+
+double Game::GetDefaultDogSpeed() const {
+    return default_dog_speed_;
+}
+
+void Game::UpdateGame(const double dt) {
+    for (auto& gs : game_sessions_) {
+        gs->UpdateDogsPosition(dt);
+    }
+}
+
+void Game::PrintMaps() {
+    for (Map map : maps_) {
+        std::cout << "Map: " << map.GetName() << std::endl;
+        for (auto road : map.GetRoads()) {
+            std::cout << "{" << road.GetStart().x << ", " << road.GetStart().y << "} - {" << road.GetEnd().x << ", " << road.GetEnd().y << "}" << std::endl;
+        }
+        std::cout << std::endl;
+    }
+}
+
 }

@@ -26,7 +26,7 @@ namespace keywords = logging::keywords;
 namespace logger {
 
 void LogExit(const int code, const std::exception* ex = nullptr);
-void LogMessageInfo (const boost::json::value& add_data, const std::string message);
+void LogMessageInfo (const boost::json::value& add_data, const std::string& message);
 void LogError(const sys::error_code& ec, std::string_view where);
 void LogError(const std::exception& ex);
 
