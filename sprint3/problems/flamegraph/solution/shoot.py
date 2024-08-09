@@ -72,3 +72,6 @@ stop(p2, wait = True)
 stop(p3, wait = True)
 time.sleep(1)
 print('Job done')
+
+
+# python3 shoot.py "/cppbackend/sprint1/problems/final_task/solution/build/bin/game_server //cppbackend/sprint1/problems/final_task/solution/data/config.json" || true
